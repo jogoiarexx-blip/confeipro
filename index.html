@@ -11,26 +11,63 @@
 
 <link rel="stylesheet" href="css/tema.css">
 <link rel="stylesheet" href="css/estilo.css">
+<script>
+// Aplica o tema salvo ANTES da página pintar, pra não piscar claro->escuro.
+(function () {
+  try {
+    var t = localStorage.getItem('cpTema');
+    if (!t) { t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+})();
+</script>
 </head>
 
 <body>
 
-<header>
-  <div class="logo-wrap">
-    <!-- Preenchido via js/config.js — troque o logo/nome lá, não aqui -->
-    <div class="logo" id="appLogo"></div>
-    <div class="logo-tagline" id="appTagline"></div>
-  </div>
-  <span class="logo-badge" id="appBadge"></span>
-</header>
+<div class="app-shell">
 
-<div class="tabs">
-  <div class="tab active" onclick="goTab(0)"><span class="tab-icon">🧮</span><span>Receita</span></div>
-  <div class="tab" onclick="goTab(1)"><span class="tab-icon">🧂</span><span>Ingredientes</span></div>
-  <div class="tab" onclick="goTab(2)"><span class="tab-icon">📋</span><span>Pedidos</span></div>
-  <div class="tab" onclick="goTab(3)"><span class="tab-icon">📊</span><span>Início</span></div>
-  <div class="tab" onclick="goTab(4)"><span class="tab-icon">🎂</span><span>Produtos</span></div>
-</div>
+  <!-- ══════════════════════════════════════════
+       MENU LATERAL
+  ══════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-wrap">
+        <!-- Preenchido via js/config.js — troque o logo/nome lá, não aqui -->
+        <div class="logo" id="appLogo"></div>
+        <div class="logo-tagline" id="appTagline"></div>
+      </div>
+      <button class="sidebar-close" onclick="fecharSidebar()" aria-label="Fechar menu">✕</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-tab="3" onclick="goTab(3)"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></div>
+      <div class="nav-item" data-tab="4" onclick="goTab(4)"><span class="nav-icon">🎂</span><span class="nav-label">Produtos</span></div>
+      <div class="nav-item" data-tab="1" onclick="goTab(1)"><span class="nav-icon">🥣</span><span class="nav-label">Ingredientes</span></div>
+      <div class="nav-item" data-tab="0" onclick="goTab(0)"><span class="nav-icon">🧾</span><span class="nav-label">Receitas</span></div>
+      <div class="nav-item" data-tab="2" onclick="goTab(2)"><span class="nav-icon">📋</span><span class="nav-label">Pedidos</span></div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="theme-toggle" id="themeToggle">
+        <button class="theme-btn" data-theme-choice="light" onclick="setTema('light')">☀ Claro</button>
+        <button class="theme-btn" data-theme-choice="dark" onclick="setTema('dark')">🌙 Escuro</button>
+      </div>
+      <span class="logo-badge" id="appBadge"></span>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharSidebar()"></div>
+
+  <!-- ══════════════════════════════════════════
+       CONTEÚDO PRINCIPAL
+  ══════════════════════════════════════════ -->
+  <div class="main-content">
+
+    <header class="mobile-topbar">
+      <button class="hamburger" onclick="abrirSidebar()" aria-label="Abrir menu">☰</button>
+      <div class="mobile-logo" id="mobileLogo"></div>
+    </header>
 
 <div class="page active" id="tab0">
 
@@ -41,6 +78,9 @@
     <button class="btn btn-preset" onclick="carregarReceita('massa')">🎂 Carregar massa</button>
     <button class="btn btn-preset" onclick="carregarReceita('bolo')" style="border-color:var(--accent2);color:var(--accent2)">🍫 Bolo de Prestígio (completo)</button>
     <button class="btn btn-preset" onclick="carregarReceita('boloNuvem')" style="border-color:var(--accent);color:var(--accent)">🍰 Bolo Nuvem (completo)</button>
+    <button class="btn btn-preset" onclick="carregarReceita('indianoMassa')">🍞 Carregar massa indiana</button>
+    <button class="btn btn-preset" onclick="carregarReceita('indianoCobertura')">🍮 Carregar cobertura indiana</button>
+    <button class="btn btn-preset" onclick="carregarReceita('boloIndiano')" style="border-color:var(--accent2);color:var(--accent2)">🇮🇳 Bolo Indiano (completo)</button>
   </div>
 
   <div class="card">
@@ -216,7 +256,7 @@
 <div class="page" id="tab1">
 
   <div class="card">
-    <div class="card-title"><span class="dot"></span>Cadastrar ingrediente</div>
+    <div class="card-title"><span class="dot"></span><span id="ingredienteFormTitulo">Cadastrar ingrediente</span></div>
 
     <label>Nome do ingrediente</label>
     <div class="autocomplete-wrap">
@@ -243,12 +283,27 @@
       <option value="kg">kg — quilos</option>
       <option value="L">L — litros</option>
     </select>
+    <span class="hint">📏 Cadastrar em kg ou L é só conveniência (comprou o pacote de 1kg? digite 1kg) — o app converte automaticamente para g/ml ao salvar, pra manter tudo na mesma unidade nas receitas.</span>
 
-    <button class="btn btn-primary" onclick="addIngrediente()">+ Adicionar ingrediente</button>
+    <button class="btn btn-primary" id="iBtnSalvar" onclick="salvarIngrediente()">+ Adicionar ingrediente</button>
+    <button class="btn btn-outline" id="iBtnCancelar" onclick="cancelarEdicaoIngrediente()" style="display:none;">✕ Cancelar edição</button>
+    <span class="hint">💡 Ao editar o preço aqui, receitas e produtos que já usam este ingrediente <strong>não mudam</strong> — eles ficam com o custo de quando foram criados. Para atualizar, adicione o ingrediente de novo neles.</span>
   </div>
 
   <div class="card">
     <div class="card-title"><span class="dot"></span>Ingredientes cadastrados</div>
+    <div class="filtros-bar">
+      <div class="filtro-busca-wrap">
+        <span class="filtro-busca-icon">🔍</span>
+        <input type="text" id="ingBusca" placeholder="Pesquisar ingrediente..." oninput="renderIngredientes()" autocomplete="off">
+      </div>
+      <select id="ingOrdem" onchange="renderIngredientes()">
+        <option value="nome">🔤 Nome (A-Z)</option>
+        <option value="recente">🕓 Últimos cadastrados</option>
+        <option value="caro">💰 Mais caro (por unidade)</option>
+        <option value="barato">💸 Mais barato (por unidade)</option>
+      </select>
+    </div>
     <div id="listaIngredientes"><div class="empty-state">🧂 Nenhum ingrediente ainda.<br>Cadastre o primeiro ali em cima!</div></div>
   </div>
 
@@ -279,6 +334,18 @@
 
   <div class="card">
     <div class="card-title"><span class="dot"></span>Pedidos registrados</div>
+    <div class="filtros-bar">
+      <div class="filtro-busca-wrap">
+        <span class="filtro-busca-icon">🔍</span>
+        <input type="text" id="pedBusca" placeholder="Pesquisar cliente ou produto..." oninput="renderPedidos()" autocomplete="off">
+      </div>
+      <select id="pedOrdem" onchange="renderPedidos()">
+        <option value="recente">🕓 Mais recentes</option>
+        <option value="maiorValor">💰 Maior valor</option>
+        <option value="menorValor">💸 Menor valor</option>
+        <option value="cliente">🔤 Cliente (A-Z)</option>
+      </select>
+    </div>
     <div id="listaPedidos"><div class="empty-state">📋 Nenhum pedido registrado ainda.<br>Adicione o primeiro ali em cima!</div></div>
     <div id="totalPedidosDiv" style="display:none;">
       <div class="total-bar">
@@ -339,6 +406,22 @@
 
   <div class="card">
     <div class="card-title"><span class="dot"></span>Produtos cadastrados</div>
+    <div class="filtros-bar">
+      <div class="filtro-busca-wrap">
+        <span class="filtro-busca-icon">🔍</span>
+        <input type="text" id="pdBusca" placeholder="Pesquisar produto..." oninput="renderProdutos()" autocomplete="off">
+      </div>
+      <select id="pdFiltroCategoria" onchange="renderProdutos()">
+        <option value="">🏷 Todas as categorias</option>
+      </select>
+      <select id="pdOrdem" onchange="renderProdutos()">
+        <option value="recente">🕓 Últimos cadastrados</option>
+        <option value="nome">🔤 Nome (A-Z)</option>
+        <option value="maiorPreco">💰 Maior preço</option>
+        <option value="menorPreco">💸 Menor preço</option>
+        <option value="vendidos">🔥 Mais vendidos</option>
+      </select>
+    </div>
     <div id="listaProdutos"><div class="empty-state">🎂 Nenhum produto ainda.<br>Cadastre um novo produto ali em baixo!</div></div>
   </div>
 
@@ -347,6 +430,12 @@
 
     <label>Nome do produto</label>
     <input id="pdNome" placeholder="Ex: Bolo Nuvem">
+
+    <label>Categoria <span style="font-weight:600;text-transform:none;">(opcional)</span></label>
+    <div class="autocomplete-wrap">
+      <input id="pdCategoria" placeholder="Ex: Bolos, Tortas, Docinhos..." autocomplete="off" oninput="catFiltrar()" onkeydown="catKeydown(event)">
+      <div class="autocomplete-list" id="catList"></div>
+    </div>
 
     <div class="row">
       <div>
@@ -508,8 +597,25 @@
 
 </div>
 
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- MODAL DE CONFIRMAÇÃO -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) fecharModal()">
+  <div class="modal-box" id="modalBox">
+    <button type="button" class="modal-close" onclick="fecharModal()" aria-label="Fechar">✕</button>
+    <div class="modal-icon" id="modalIcon">❓</div>
+    <div class="modal-title" id="modalTitle">Confirmar ação</div>
+    <div class="modal-message" id="modalMessage">Tem certeza?</div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" id="modalBtnCancelar" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="modalBtnConfirmar" onclick="_modalConfirmarClique()">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Ordem importa: cada arquivo pode usar funções/variáveis dos anteriores.
      Se criar um módulo novo, adicione-o aqui na ordem certa. -->
@@ -517,6 +623,8 @@
 <script src="js/utils.js"></script>
 <script src="js/dados.js"></script>
 <script src="js/migracoes.js"></script>
+<script src="js/tema.js"></script>
+<script src="js/modal.js"></script>
 <script src="js/navegacao.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/ingredientes.js"></script>

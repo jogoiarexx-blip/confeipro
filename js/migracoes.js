@@ -165,13 +165,34 @@ function corrigirReceitaBoloNuvemV9() {
   if (mudou) salvarProdutos();
 }
 
+// Migração pontual (v10): ingredientes cadastrados em kg ou L (antes da
+// conversão automática existir) ficavam com custoPorUnidade() calculado
+// "por kg"/"por L" — e quem usava a receita digitando a quantidade em
+// gramas/ml (o mais comum) acabava com o custo 1000x maior sem nenhum
+// aviso. Aqui só convertemos o CADASTRO do ingrediente (qtdTotal/unidade)
+// pra g/ml; itens de receita/produto já salvos mantêm o custo congelado
+// de quando foram adicionados, igual às outras migrações deste arquivo.
+function corrigirUnidadesKgLitro() {
+  let mudou = false;
+  ingredientes.forEach(ing => {
+    if (ing.unidade === 'kg' || ing.unidade === 'L') {
+      const { qtd, unidade } = normalizarUnidade(ing.qtdTotal, ing.unidade);
+      ing.qtdTotal = qtd;
+      ing.unidade  = unidade;
+      mudou = true;
+    }
+  });
+  if (mudou) salvarIng();
+}
+
 // Lista de migrações pontuais, associadas à versão em que passaram a existir.
 // Ao subir o APP_VERSION, só rodam as migrações com versao > versão salva.
 const MIGRACOES = [
-  { versao: 5, executar: migrarBoloNuvemPadrao },
-  { versao: 6, executar: corrigirCustosZerados },
-  { versao: 7, executar: corrigirLeiteCondensado },
-  { versao: 9, executar: corrigirReceitaBoloNuvemV9 },
+  { versao: 5,  executar: migrarBoloNuvemPadrao },
+  { versao: 6,  executar: corrigirCustosZerados },
+  { versao: 7,  executar: corrigirLeiteCondensado },
+  { versao: 9,  executar: corrigirReceitaBoloNuvemV9 },
+  { versao: 10, executar: corrigirUnidadesKgLitro },
 ];
 
 function rodarMesclaEMigracoes(versaoBase) {

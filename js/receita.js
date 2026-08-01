@@ -28,7 +28,7 @@ function aoSelecionarIngrediente() {
   }
 
   const ing = ingredientes[parseInt(idx)];
-  chip.textContent = `R$${ing.precoTotal.toFixed(2)} / ${ing.qtdTotal}${ing.unidade}  →  R$${custoPorUnidade(ing).toFixed(4)}/${ing.unidade}`;
+  chip.textContent = `R$${ing.precoTotal.toFixed(2).replace('.', ',')} / ${ing.qtdTotal}${ing.unidade}  →  R$${custoPorUnidade(ing).toFixed(4).replace('.', ',')}/${ing.unidade}`;
   meta.style.display = 'block';
   uDisp.value = ing.unidade;
   document.getElementById('rCustoBox').style.display = 'none';
@@ -72,10 +72,20 @@ function adicionarNaReceita() {
 }
 
 function delItemReceita(idx) {
+  const item = receita[idx];
+  if (!item) return;
+
   receita.splice(idx, 1);
   salvarReceita();
   renderReceita();
   document.getElementById('resultFinal').style.display = 'none';
+
+  toast(`✓ "${item.nome}" removido da receita`, null, function desfazerRemocaoReceita() {
+    receita.splice(idx, 0, item);
+    salvarReceita();
+    renderReceita();
+    toast('✓ Item restaurado');
+  });
 }
 
 function renderReceita() {
@@ -91,8 +101,8 @@ function renderReceita() {
   lista.innerHTML = receita.map((item, i) => `
     <div class="recipe-item">
       <div>
-        <div class="recipe-name">${item.nome}</div>
-        <div class="recipe-sub">${item.qtd}${item.unidade}</div>
+        <div class="recipe-name">${escapeHtml(item.nome)}</div>
+        <div class="recipe-sub">${item.qtd}${escapeHtml(item.unidade)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="recipe-cost">${fmt(item.custo)}</span>
@@ -114,13 +124,13 @@ function calcularFinal() {
 
   if (isNaN(margem) || margem < 0) { toast('⚠️ Informe a margem de lucro', 'err'); return; }
 
-  const gas      = arred(parseFloat(document.getElementById('xGas').value)      || 0);
-  const energia  = arred(parseFloat(document.getElementById('xEnergia').value)  || 0);
-  const embal    = arred(parseFloat(document.getElementById('xEmbalagem').value) || 0);
+  const gas      = arred(numNaoNegativo(document.getElementById('xGas').value));
+  const energia  = arred(numNaoNegativo(document.getElementById('xEnergia').value));
+  const embal    = arred(numNaoNegativo(document.getElementById('xEmbalagem').value));
   const extras   = arred(gas + energia + embal);
 
-  const valorHora = parseFloat(document.getElementById('xValorHora').value) || 0;
-  const horas     = parseFloat(document.getElementById('xHoras').value)     || 0;
+  const valorHora = numNaoNegativo(document.getElementById('xValorHora').value);
+  const horas     = numNaoNegativo(document.getElementById('xHoras').value);
   const maoObra   = arred(valorHora * horas);
 
   let perdaPct = parseFloat(document.getElementById('xPerda').value) || 0;
@@ -230,6 +240,26 @@ const RECEITAS_PRONTAS = {
     { nome: 'Fermento em pó',        qtd: 10,  unidade: 'g'       },
     { nome: 'Bicarbonato de sódio',  qtd: 5,   unidade: 'g'       },
   ],
+  // Bolo Indiano — massa de farinha de rosca com canela.
+  indianoMassa: [
+    { nome: 'Ovos',                  qtd: 5,   unidade: 'unidade' },
+    { nome: 'Açúcar',                qtd: 100, unidade: 'g'       }, // açúcar refinado
+    { nome: 'Açúcar mascavo',        qtd: 100, unidade: 'g'       },
+    { nome: 'Óleo',                  qtd: 45,  unidade: 'ml'      },
+    { nome: 'Farinha de rosca',      qtd: 120, unidade: 'g'       },
+    { nome: 'Canela em pó',          qtd: 5,   unidade: 'g'       }, // 1 colher de chá
+    { nome: 'Sal refinado',          qtd: 1.5, unidade: 'g'       }, // 1/4 colher de chá
+    { nome: 'Fermento em pó',        qtd: 10,  unidade: 'g'       }, // 1 colher de sopa
+  ],
+  // Bolo Indiano — recheio e cobertura de leite condensado (brigadeiro mole).
+  indianoCobertura: [
+    { nome: 'Leite condensado',      qtd: 790, unidade: 'g'       }, // 2 latas
+    { nome: 'Gemas',                 qtd: 2,   unidade: 'unidade' },
+    { nome: 'Manteiga sem sal',      qtd: 15,  unidade: 'g'       }, // 1 colher de sopa
+    { nome: 'Creme de leite',        qtd: 100, unidade: 'g'       },
+    { nome: 'Leite integral',        qtd: 240, unidade: 'ml'      }, // pra molhar a massa
+    { nome: 'Canela em pó',          qtd: 2,   unidade: 'g'       }, // finalizar, a gosto
+  ],
 };
 
 function getBolo() {
@@ -259,14 +289,28 @@ function getBoloNuvem() {
   return Object.values(mapa);
 }
 
+function getBoloIndiano() {
+  const todos = [
+    ...RECEITAS_PRONTAS.indianoMassa,
+    ...RECEITAS_PRONTAS.indianoCobertura,
+  ];
+  const mapa = {};
+  todos.forEach(item => {
+    if (mapa[item.nome]) mapa[item.nome].qtd += item.qtd;
+    else mapa[item.nome] = { ...item };
+  });
+  return Object.values(mapa);
+}
+
 const RENDIMENTO_INFO = {
-  bolo:      { nome: '🍫 Bolo de Prestígio', peso: '~3 kg (bolo inteiro)',   fracionado: '12 potes de 250g', porcoes: 12 },
-  boloNuvem: { nome: '🍰 Bolo Nuvem',         peso: '~1.5 kg (bolo inteiro)', fracionado: '12 fatias',         porcoes: 12 },
+  bolo:        { nome: '🍫 Bolo de Prestígio', peso: '~3 kg (bolo inteiro)',   fracionado: '12 potes de 250g', porcoes: 12 },
+  boloNuvem:   { nome: '🍰 Bolo Nuvem',         peso: '~1.5 kg (bolo inteiro)', fracionado: '12 fatias',         porcoes: 12 },
+  boloIndiano: { nome: '🇮🇳 Bolo Indiano',      peso: '~1.2 kg (forma 27x18cm)', fracionado: '10-12 fatias',    porcoes: 10 },
 };
 
 function carregarReceita(tipo) {
-  const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : RECEITAS_PRONTAS[tipo];
-  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem' };
+  const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : tipo === 'boloIndiano' ? getBoloIndiano() : RECEITAS_PRONTAS[tipo];
+  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano' };
 
   const faltando = itens.filter(item => !buscarIngrediente(item.nome));
   if (faltando.length) {
@@ -310,3 +354,33 @@ function limparReceita() {
   document.getElementById('cardRendimento').style.display = 'none';
   toast('🗑 Receita limpa');
 }
+
+// ═══════════════════════════════════════════
+// CONFIGURAÇÕES DA ABA RECEITA (margem, perda, taxa, porções, extras...)
+// ═══════════════════════════════════════════
+// Antes esses campos ficavam só no HTML, com valor padrão fixo no
+// atributo `value`. Como nada salvava, todo reload jogava tudo de
+// volta pro padrão. Agora fica salvo no localStorage, igual ao resto.
+const CONFIG_RECEITA_IDS = ['xGas', 'xEnergia', 'xEmbalagem', 'xValorHora', 'xHoras', 'xPerda', 'xTaxa', 'fMargem', 'fPorcoes'];
+
+function salvarConfigReceita() {
+  const cfg = {};
+  CONFIG_RECEITA_IDS.forEach(id => { cfg[id] = document.getElementById(id).value; });
+  localStorage.setItem('cpConfigReceita', JSON.stringify(cfg));
+}
+
+function restaurarConfigReceita() {
+  const cfg = JSON.parse(localStorage.getItem('cpConfigReceita') || 'null');
+  if (!cfg) return;
+  CONFIG_RECEITA_IDS.forEach(id => {
+    if (cfg[id] !== undefined && cfg[id] !== '') document.getElementById(id).value = cfg[id];
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  restaurarConfigReceita();
+  CONFIG_RECEITA_IDS.forEach(id => {
+    document.getElementById(id).addEventListener('input', salvarConfigReceita);
+    document.getElementById(id).addEventListener('change', salvarConfigReceita);
+  });
+});

@@ -2,8 +2,9 @@
 // MARCA — aplica o que está em config.js no cabeçalho
 // ═══════════════════════════════════════════
 function aplicarConfigVisual() {
-  document.getElementById('appLogo').innerHTML =
-    `${CONFIG.emoji} ${CONFIG.nomeBase}<span class="logo-accent">${CONFIG.nomeDestaque}</span>`;
+  const logoHtml = `${CONFIG.emoji} ${CONFIG.nomeBase}<span class="logo-accent">${CONFIG.nomeDestaque}</span>`;
+  document.getElementById('appLogo').innerHTML = logoHtml;
+  document.getElementById('mobileLogo').innerHTML = logoHtml;
   document.getElementById('appTagline').textContent = CONFIG.tagline;
   document.getElementById('appBadge').textContent    = CONFIG.versao;
 }

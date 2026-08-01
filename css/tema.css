@@ -35,3 +35,31 @@
   --font-body:    'Nunito', sans-serif; /* texto geral */
   --font-mono:    'DM Mono', monospace; /* números e valores */
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TEMA ESCURO
+   ───────────────────────────────────────────────────────────
+   Ativado colocando data-theme="dark" na tag <html> (feito via
+   js/tema.js, com preferência salva em localStorage). Troque
+   qualquer cor abaixo pra ajustar o visual do modo escuro —
+   o restante do app (botões, cards, gráficos) já usa as mesmas
+   variáveis, então nada mais precisa mudar.
+   ═══════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  --bg:         #1B1510;  /* fundo geral da página */
+  --surface:    #26201A;  /* fundo dos cards, sidebar e header */
+  --surface2:   #2F2820;  /* fundo de inputs e caixas de resultado */
+  --border:     #40372C;  /* linhas e bordas sutis */
+
+  --accent:     #EA7C97;  /* cor principal da marca (botões, destaques) */
+  --accent-soft:#3A2A30;  /* versão clara do accent (aba ativa, foco) */
+  --accent2:    #DDA34F;  /* cor secundária (detalhes, botões alternativos) */
+
+  --green:      #92B584;  /* sucesso, lucro, valores positivos */
+  --green-soft: #263323;
+  --amber:      #E4A54A;  /* alertas leves, custos extras */
+  --red:        #E37D68;  /* erros, exclusão, valores negativos */
+
+  --text:       #F1E6D8;  /* texto principal */
+  --muted:      #AB9781;  /* texto secundário/legendas */
+}
