@@ -1,0 +1,312 @@
+// ═══════════════════════════════════════════
+// SELECT — TAB RECEITA
+// ═══════════════════════════════════════════
+function atualizarSelect() {
+  const sel = document.getElementById('rSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— selecionar ingrediente —</option>';
+  ingredientes.forEach((ing, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = ing.nome;
+    sel.appendChild(o);
+  });
+  sel.value = cur;
+}
+
+function aoSelecionarIngrediente() {
+  const idx   = document.getElementById('rSelect').value;
+  const meta  = document.getElementById('rMeta');
+  const chip  = document.getElementById('rChip');
+  const uDisp = document.getElementById('rUnidadeDisplay');
+
+  if (idx === '') {
+    meta.style.display = 'none';
+    uDisp.value = '';
+    document.getElementById('rCustoBox').style.display = 'none';
+    return;
+  }
+
+  const ing = ingredientes[parseInt(idx)];
+  chip.textContent = `R$${ing.precoTotal.toFixed(2)} / ${ing.qtdTotal}${ing.unidade}  →  R$${custoPorUnidade(ing).toFixed(4)}/${ing.unidade}`;
+  meta.style.display = 'block';
+  uDisp.value = ing.unidade;
+  document.getElementById('rCustoBox').style.display = 'none';
+}
+
+function calcularIngrediente() {
+  const idx      = document.getElementById('rSelect').value;
+  const qtdUsada = parseFloat(document.getElementById('rQtdUsada').value);
+
+  if (idx === '') { toast('⚠️ Selecione um ingrediente', 'err'); return null; }
+  if (isNaN(qtdUsada) || qtdUsada <= 0) { toast('⚠️ Informe uma quantidade válida', 'err'); return null; }
+
+  const ing   = ingredientes[parseInt(idx)];
+  const custo = arred(custoPorUnidade(ing) * qtdUsada);
+
+  document.getElementById('rCustoIngrediente').textContent = fmt(custo);
+  document.getElementById('rCustoBox').style.display = 'block';
+  return { ing, qtdUsada, custo };
+}
+
+function adicionarNaReceita() {
+  const res = calcularIngrediente();
+  if (!res) return;
+
+  receita.push({ nome: res.ing.nome, qtd: res.qtdUsada, unidade: res.ing.unidade, custo: res.custo });
+  salvarReceita();
+
+  // Animação pop no último item
+  renderReceita();
+  const items = document.querySelectorAll('.recipe-item');
+  if (items.length) items[items.length - 1].classList.add('pop-in');
+
+  toast(`✓ ${res.ing.nome} adicionado à receita`);
+
+  document.getElementById('rSelect').value          = '';
+  document.getElementById('rQtdUsada').value        = '';
+  document.getElementById('rUnidadeDisplay').value  = '';
+  document.getElementById('rMeta').style.display    = 'none';
+  document.getElementById('rCustoBox').style.display = 'none';
+  document.getElementById('resultFinal').style.display = 'none';
+}
+
+function delItemReceita(idx) {
+  receita.splice(idx, 1);
+  salvarReceita();
+  renderReceita();
+  document.getElementById('resultFinal').style.display = 'none';
+}
+
+function renderReceita() {
+  const lista    = document.getElementById('listaReceita');
+  const totalDiv = document.getElementById('receitaTotal');
+
+  if (!receita.length) {
+    lista.innerHTML = '<div class="empty-state">🥣 Sua receita está vazia.<br>Escolha um ingrediente acima e clique em "Adicionar à receita".</div>';
+    totalDiv.style.display = 'none';
+    return;
+  }
+
+  lista.innerHTML = receita.map((item, i) => `
+    <div class="recipe-item">
+      <div>
+        <div class="recipe-name">${item.nome}</div>
+        <div class="recipe-sub">${item.qtd}${item.unidade}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="recipe-cost">${fmt(item.custo)}</span>
+        <button class="btn-del" onclick="delItemReceita(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+
+  const total = arred(receita.reduce((s, r) => s + r.custo, 0));
+  document.getElementById('totalReceita').textContent = fmt(total);
+  totalDiv.style.display = 'block';
+}
+
+function calcularFinal() {
+  if (!receita.length) { toast('⚠️ Adicione ingredientes à receita', 'err'); return; }
+
+  const margem  = parseFloat(document.getElementById('fMargem').value);
+  const porcoes = parseFloat(document.getElementById('fPorcoes').value) || 1;
+
+  if (isNaN(margem) || margem < 0) { toast('⚠️ Informe a margem de lucro', 'err'); return; }
+
+  const gas      = arred(parseFloat(document.getElementById('xGas').value)      || 0);
+  const energia  = arred(parseFloat(document.getElementById('xEnergia').value)  || 0);
+  const embal    = arred(parseFloat(document.getElementById('xEmbalagem').value) || 0);
+  const extras   = arred(gas + energia + embal);
+
+  const valorHora = parseFloat(document.getElementById('xValorHora').value) || 0;
+  const horas     = parseFloat(document.getElementById('xHoras').value)     || 0;
+  const maoObra   = arred(valorHora * horas);
+
+  let perdaPct = parseFloat(document.getElementById('xPerda').value) || 0;
+  if (perdaPct < 0) perdaPct = 0;
+  if (perdaPct > 100) perdaPct = 100;
+
+  let taxaPct = parseFloat(document.getElementById('xTaxa').value) || 0;
+  if (taxaPct < 0) taxaPct = 0;
+  if (taxaPct > 95) taxaPct = 95; // trava de segurança pra não dividir por ~0
+
+  const custoIngBase = arred(receita.reduce((s, r) => s + r.custo, 0));
+  const valorPerda    = arred(custoIngBase * (perdaPct / 100));
+  const custoIng      = arred(custoIngBase + valorPerda); // ingredientes já com perda embutida
+
+  const custoTotal  = arred(custoIng + extras + maoObra);
+  const custoPorcao = arred(custoTotal / porcoes);
+
+  // Preço já calculado pra cobrir a margem desejada MESMO DEPOIS da taxa do cartão/Pix/iFood
+  const vendaPorcao = arred((custoPorcao * (1 + margem / 100)) / (1 - taxaPct / 100));
+  const vendaTotal  = arred(vendaPorcao * porcoes);
+  const valorTaxa   = arred(vendaTotal * (taxaPct / 100));
+  const lucro       = arred(vendaTotal - custoTotal - valorTaxa);
+
+  document.getElementById('fCustoIng').textContent    = fmt(custoIngBase);
+  document.getElementById('fCusto').textContent       = fmt(custoTotal);
+  document.getElementById('fCustoPorcao').textContent = `${fmt(custoPorcao)} × ${porcoes} porç.`;
+  document.getElementById('fVenda').textContent       = `${fmt(vendaPorcao)}/porção`;
+
+  // Perda/desperdício
+  const rowPerda = document.getElementById('rowPerda');
+  if (valorPerda > 0) {
+    document.getElementById('fPerda').textContent = `${fmt(valorPerda)} (${perdaPct}%)`;
+    rowPerda.style.display = 'flex';
+  } else {
+    rowPerda.style.display = 'none';
+  }
+
+  // Mão de obra
+  const rowMaoObra = document.getElementById('rowMaoObra');
+  if (maoObra > 0) {
+    document.getElementById('fMaoObra').textContent = fmt(maoObra);
+    rowMaoObra.style.display = 'flex';
+  } else {
+    rowMaoObra.style.display = 'none';
+  }
+
+  // Custos extras (gás/energia/embalagem)
+  const rowExtras = document.getElementById('rowCustosExtras');
+  if (extras > 0) {
+    document.getElementById('fCustosExtras').textContent = fmt(extras);
+    rowExtras.style.display = 'flex';
+  } else {
+    rowExtras.style.display = 'none';
+  }
+
+  // Venda total
+  const rowTotal = document.getElementById('rowVendaTotal');
+  if (porcoes > 1) {
+    document.getElementById('fVendaTotal').textContent = fmt(vendaTotal);
+    rowTotal.style.display = 'flex';
+  } else {
+    rowTotal.style.display = 'none';
+  }
+
+  // Taxa cartão/Pix/iFood
+  const rowTaxa = document.getElementById('rowTaxa');
+  if (valorTaxa > 0) {
+    document.getElementById('fTaxa').textContent = `− ${fmt(valorTaxa)} (${taxaPct}%)`;
+    rowTaxa.style.display = 'flex';
+  } else {
+    rowTaxa.style.display = 'none';
+  }
+
+  // Lucro líquido
+  const rowLucro = document.getElementById('rowLucro');
+  document.getElementById('fLucro').textContent = fmt(lucro);
+  document.getElementById('fLucro').className = 'result-value ' + (lucro >= 0 ? 'green' : 'red');
+  rowLucro.style.display = 'flex';
+
+  document.getElementById('resultFinal').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════
+// RECEITAS PRONTAS
+// ═══════════════════════════════════════════
+const RECEITAS_PRONTAS = {
+  chocolate: [
+    { nome: 'Chocolate em pó 50%',   qtd: 50,  unidade: 'g'       },
+    { nome: 'Cobertura meio amarga', qtd: 100, unidade: 'g'       },
+    { nome: 'Leite integral',        qtd: 100, unidade: 'ml'      },
+    { nome: 'Leite condensado',      qtd: 390, unidade: 'g'       },
+    { nome: 'Creme de leite',        qtd: 600, unidade: 'g'       },
+  ],
+  coco: [
+    { nome: 'Leite condensado',      qtd: 780, unidade: 'g'       },
+    { nome: 'Creme de leite',        qtd: 600, unidade: 'g'       },
+    { nome: 'Leite de coco',         qtd: 200, unidade: 'ml'      },
+    { nome: 'Coco flocado',          qtd: 200, unidade: 'g'       },
+  ],
+  massa: [
+    { nome: 'Leite integral',        qtd: 200, unidade: 'ml'      },
+    { nome: 'Ovos',                  qtd: 4,   unidade: 'unidade' },
+    { nome: 'Açúcar',                qtd: 200, unidade: 'g'       },
+    { nome: 'Óleo',                  qtd: 120, unidade: 'ml'      },
+    { nome: 'Chocolate em pó 50%',   qtd: 100, unidade: 'g'       },
+    { nome: 'Farinha de trigo',      qtd: 240, unidade: 'g'       },
+    { nome: 'Fermento em pó',        qtd: 10,  unidade: 'g'       },
+    { nome: 'Bicarbonato de sódio',  qtd: 5,   unidade: 'g'       },
+  ],
+};
+
+function getBolo() {
+  const todos = [
+    ...RECEITAS_PRONTAS.massa,
+    ...RECEITAS_PRONTAS.chocolate,
+    ...RECEITAS_PRONTAS.coco,
+  ];
+  const mapa = {};
+  todos.forEach(item => {
+    if (mapa[item.nome]) mapa[item.nome].qtd += item.qtd;
+    else mapa[item.nome] = { ...item };
+  });
+  return Object.values(mapa);
+}
+
+function getBoloNuvem() {
+  const todos = [
+    ...MASSA_BAUNILHA_PADRAO,
+    ...CHANTININHO_NINHO_PADRAO,   // cobertura (sem recheio)
+  ];
+  const mapa = {};
+  todos.forEach(item => {
+    if (mapa[item.nome]) mapa[item.nome].qtd += item.qtd;
+    else mapa[item.nome] = { ...item };
+  });
+  return Object.values(mapa);
+}
+
+const RENDIMENTO_INFO = {
+  bolo:      { nome: '🍫 Bolo de Prestígio', peso: '~3 kg (bolo inteiro)',   fracionado: '12 potes de 250g', porcoes: 12 },
+  boloNuvem: { nome: '🍰 Bolo Nuvem',         peso: '~1.5 kg (bolo inteiro)', fracionado: '12 fatias',         porcoes: 12 },
+};
+
+function carregarReceita(tipo) {
+  const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : RECEITAS_PRONTAS[tipo];
+  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem' };
+
+  const faltando = itens.filter(item => !buscarIngrediente(item.nome));
+  if (faltando.length) {
+    toast(`⚠️ Não encontrado: ${faltando[0].nome}`, 'err');
+    return;
+  }
+
+  receita = itens.map(item => {
+    const ing   = buscarIngrediente(item.nome);
+    const custo = arred(custoPorUnidade(ing) * item.qtd);
+    return { nome: ing.nome, qtd: item.qtd, unidade: item.unidade, custo };
+  });
+
+  salvarReceita();
+  renderReceita();
+  document.getElementById('resultFinal').style.display = 'none';
+
+  const cardRend = document.getElementById('cardRendimento');
+  const info = RENDIMENTO_INFO[tipo];
+  if (info) {
+    cardRend.style.display = 'block';
+    document.getElementById('fPorcoes').value = info.porcoes;
+    document.getElementById('rendTitulo').textContent      = `${info.nome} — Rendimento`;
+    document.getElementById('rendNome').textContent        = info.nome;
+    document.getElementById('rendPeso').textContent        = info.peso;
+    document.getElementById('rendFracionado').textContent  = info.fracionado;
+  } else {
+    cardRend.style.display = 'none';
+    document.getElementById('fPorcoes').value = '';
+  }
+
+  toast(`✓ ${nomes[tipo]} carregada!`);
+}
+
+function limparReceita() {
+  if (!receita.length) return;
+  receita = [];
+  salvarReceita();
+  renderReceita();
+  document.getElementById('resultFinal').style.display = 'none';
+  document.getElementById('cardRendimento').style.display = 'none';
+  toast('🗑 Receita limpa');
+}

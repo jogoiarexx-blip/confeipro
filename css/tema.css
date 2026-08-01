@@ -1,0 +1,37 @@
+/* ═══════════════════════════════════════════════════════════
+   TEMA — cores, fontes e raio das bordas
+   ───────────────────────────────────────────────────────────
+   Esse é o ÚNICO arquivo que você precisa tocar pra trocar as
+   cores do app inteiro. Troque o valor hexadecimal de qualquer
+   variável abaixo e recarregue a página — todo o app (botões,
+   cards, textos, gráficos) usa essas variáveis, então nada
+   mais precisa mudar.
+
+   Dica: se trocar --bg, atualize também o <meta name="theme-color">
+   no <head> do index.html pra combinar (é a cor da barra do
+   navegador no celular).
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --bg:         #FFF8F0;  /* fundo geral da página */
+  --surface:    #FFFFFF;  /* fundo dos cards e do header */
+  --surface2:   #FCF1E3;  /* fundo de inputs e caixas de resultado */
+  --border:     #F0DFC5;  /* linhas e bordas sutis */
+
+  --accent:     #E0577A;  /* cor principal da marca (botões, destaques) */
+  --accent-soft:#FBE7ED;  /* versão clara do accent (aba ativa, foco) */
+  --accent2:    #C98A2E;  /* cor secundária (detalhes, botões alternativos) */
+
+  --green:      #7C9A6D;  /* sucesso, lucro, valores positivos */
+  --green-soft: #E9F0E3;
+  --amber:      #D98A2B;  /* alertas leves, custos extras */
+  --red:        #D9614A;  /* erros, exclusão, valores negativos */
+
+  --text:       #4A3222;  /* texto principal */
+  --muted:      #9A7F63;  /* texto secundário/legendas */
+
+  --radius:     18px;     /* arredondamento padrão dos cards */
+
+  --font-display: 'Fraunces', serif;   /* títulos */
+  --font-body:    'Nunito', sans-serif; /* texto geral */
+  --font-mono:    'DM Mono', monospace; /* números e valores */
+}

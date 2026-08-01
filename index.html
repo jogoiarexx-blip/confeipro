@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Se trocar --bg em css/tema.css, atualize a cor abaixo também -->
+<meta name="theme-color" content="#FFF8F0">
+<title>Confeipro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tema.css">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <!-- Preenchido via js/config.js — troque o logo/nome lá, não aqui -->
+    <div class="logo" id="appLogo"></div>
+    <div class="logo-tagline" id="appTagline"></div>
+  </div>
+  <span class="logo-badge" id="appBadge"></span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="goTab(0)"><span class="tab-icon">🧮</span><span>Receita</span></div>
+  <div class="tab" onclick="goTab(1)"><span class="tab-icon">🧂</span><span>Ingredientes</span></div>
+  <div class="tab" onclick="goTab(2)"><span class="tab-icon">📋</span><span>Pedidos</span></div>
+  <div class="tab" onclick="goTab(3)"><span class="tab-icon">📊</span><span>Início</span></div>
+  <div class="tab" onclick="goTab(4)"><span class="tab-icon">🎂</span><span>Produtos</span></div>
+</div>
+
+<div class="page active" id="tab0">
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Receitas prontas</div>
+    <button class="btn btn-preset" onclick="carregarReceita('chocolate')">🍫 Carregar receita chocolate</button>
+    <button class="btn btn-preset" onclick="carregarReceita('coco')">🥥 Carregar receita coco</button>
+    <button class="btn btn-preset" onclick="carregarReceita('massa')">🎂 Carregar massa</button>
+    <button class="btn btn-preset" onclick="carregarReceita('bolo')" style="border-color:var(--accent2);color:var(--accent2)">🍫 Bolo de Prestígio (completo)</button>
+    <button class="btn btn-preset" onclick="carregarReceita('boloNuvem')" style="border-color:var(--accent);color:var(--accent)">🍰 Bolo Nuvem (completo)</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Montar receita</div>
+
+    <label>Ingrediente</label>
+    <select id="rSelect" onchange="aoSelecionarIngrediente()">
+      <option value="">— selecionar ingrediente —</option>
+    </select>
+
+    <div id="rMeta" style="display:none; margin-top:8px;">
+      <span class="chip" id="rChip"></span>
+    </div>
+
+    <label>Quantidade usada</label>
+    <div class="row">
+      <input id="rQtdUsada" type="number" placeholder="Ex: 50" step="0.01" min="0">
+      <input id="rUnidadeDisplay" readonly placeholder="unidade" style="color:var(--muted);">
+    </div>
+
+    <div class="result-box" id="rCustoBox" style="display:none;">
+      <div class="result-row">
+        <span class="result-label">Custo deste ingrediente</span>
+        <span class="result-value green" id="rCustoIngrediente">R$ 0,00</span>
+      </div>
+    </div>
+
+    <button class="btn btn-outline" onclick="calcularIngrediente()">Ver custo</button>
+    <button class="btn btn-primary" onclick="adicionarNaReceita()">+ Adicionar à receita</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Receita atual</div>
+    <div id="listaReceita"><div class="empty-state">🥣 Sua receita está vazia.<br>Escolha um ingrediente acima e clique em "Adicionar à receita".</div></div>
+    <div id="receitaTotal" style="display:none;">
+      <div class="total-bar">
+        <span>Custo ingredientes</span>
+        <span class="result-value green" id="totalReceita">R$ 0,00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--amber)"></span>Custos adicionais</div>
+    <div class="extras-grid">
+      <div>
+        <label>🔥 Gás (R$)</label>
+        <input id="xGas" type="number" placeholder="0.00" step="0.01" min="0" value="2.00">
+      </div>
+      <div>
+        <label>⚡ Energia (R$)</label>
+        <input id="xEnergia" type="number" placeholder="0.00" step="0.01" min="0" value="0">
+      </div>
+      <div>
+        <label>📦 Embalagem (R$)</label>
+        <input id="xEmbalagem" type="number" placeholder="0.00" step="0.01" min="0" value="2.00">
+      </div>
+    </div>
+    <span class="hint">🔥 O gás já vem com R$ 2,00 e 📦 a embalagem com R$ 2,00 sugeridos — ajuste pro valor real da sua receita.</span>
+
+    <div class="section-divider" style="margin-top:16px;">🧑‍🍳 Mão de obra</div>
+    <span class="hint" style="margin-top:0;">Seu tempo também custa! Escolha o valor da sua hora e diga quantas horas essa receita toma.</span>
+    <div class="row">
+      <div>
+        <label>Valor da sua hora (R$)</label>
+        <select id="xValorHora">
+          <option value="20">R$ 20,00</option>
+          <option value="25">R$ 25,00</option>
+          <option value="30">R$ 30,00</option>
+        </select>
+      </div>
+      <div>
+        <label>Tempo gasto (horas)</label>
+        <input id="xHoras" type="number" placeholder="Ex: 1.5" step="0.1" min="0" value="0">
+      </div>
+    </div>
+
+    <div class="section-divider" style="margin-top:16px;">📉 Perda e taxas</div>
+
+    <label>🗑️ Perda/desperdício (%)</label>
+    <input id="xPerda" type="number" placeholder="Ex: 8" step="1" min="0" max="100" value="8">
+    <span class="hint">Já vem com 8% (média do mercado). Ajuste se souber sua perda real.</span>
+
+    <label>💳 Taxa do cartão, Pix ou iFood (%)</label>
+    <input id="xTaxa" type="number" placeholder="Ex: 12" step="0.1" min="0" max="95" value="5">
+    <span class="hint">Já vem com 5% (cartão comum). Se vender pelo iFood, troque para a taxa do app (costuma ser bem mais alta, 12% a 27%). O preço final já é calculado pra cobrir essa taxa.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Preço de venda</div>
+
+    <label>Margem de lucro (%)</label>
+    <input id="fMargem" type="number" placeholder="Ex: 50" step="1" min="0">
+    <span class="hint">💡 Quanto você quer ganhar em cima do custo. 50 = o preço de venda fica 50% acima do custo.</span>
+
+    <label>Rendimento (porções)</label>
+    <input id="fPorcoes" type="number" placeholder="Ex: 10" step="1" min="1">
+    <span class="hint">Em quantos pedaços, potes ou unidades essa receita rende.</span>
+
+    <button class="btn btn-primary" onclick="calcularFinal()">✓ Calcular preço de venda</button>
+
+    <div class="result-box receipt" id="resultFinal" style="display:none;">
+      <div class="result-row">
+        <span class="result-label">Custo ingredientes</span>
+        <span class="result-value" id="fCustoIng"></span>
+      </div>
+      <div class="result-row" id="rowPerda" style="display:none;">
+        <span class="result-label">🗑️ Perda/desperdício</span>
+        <span class="result-value amber" id="fPerda"></span>
+      </div>
+      <div class="result-row" id="rowMaoObra" style="display:none;">
+        <span class="result-label">🧑‍🍳 Mão de obra</span>
+        <span class="result-value amber" id="fMaoObra"></span>
+      </div>
+      <div class="result-row" id="rowCustosExtras" style="display:none;">
+        <span class="result-label">Gás/energia/embalagem</span>
+        <span class="result-value amber" id="fCustosExtras"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Custo total</span>
+        <span class="result-value" id="fCusto"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Custo por porção</span>
+        <span class="result-value" id="fCustoPorcao"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Preço de venda / porção</span>
+        <span class="result-value big" id="fVenda"></span>
+      </div>
+      <div class="result-row" id="rowVendaTotal" style="display:none;">
+        <span class="result-label">Preço de venda total</span>
+        <span class="result-value big green" id="fVendaTotal"></span>
+      </div>
+      <div class="result-row" id="rowTaxa" style="display:none;">
+        <span class="result-label">💳 Taxa cartão/Pix/iFood</span>
+        <span class="result-value red" id="fTaxa"></span>
+      </div>
+      <div class="result-row" id="rowLucro" style="display:none;">
+        <span class="result-label">💎 Lucro estimado (líquido)</span>
+        <span class="result-value green" id="fLucro"></span>
+      </div>
+    </div>
+
+    <button class="btn btn-red" onclick="limparReceita()" style="margin-top:12px;">🗑 Limpar receita</button>
+  </div>
+
+  <!-- Card rendimento (receitas prontas completas) -->
+  <div class="card" id="cardRendimento" style="display:none;">
+    <div class="card-title"><span class="dot" style="background:var(--amber)"></span><span id="rendTitulo">Receita — Rendimento</span></div>
+    <div class="result-box">
+      <div class="result-row">
+        <span class="result-label">🍰 Nome</span>
+        <span class="result-value" id="rendNome">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">⚖️ Peso total</span>
+        <span class="result-value" id="rendPeso">—</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">🥄 Fracionado</span>
+        <span class="result-value" id="rendFracionado">—</span>
+      </div>
+    </div>
+    <small style="color:var(--muted);font-size:12px;" id="rendDica">💡 Use as porções sugeridas no campo acima para calcular o preço por fatia/pote</small>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 1 — INGREDIENTES
+══════════════════════════════════════════════ -->
+<div class="page" id="tab1">
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Cadastrar ingrediente</div>
+
+    <label>Nome do ingrediente</label>
+    <div class="autocomplete-wrap">
+      <input id="iNome" placeholder="Ex: Chocolate em pó" autocomplete="off" oninput="acFiltrar()" onkeydown="acKeydown(event)">
+      <div class="autocomplete-list" id="acList"></div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Preço da embalagem (R$)</label>
+        <input id="iPrecoTotal" type="number" placeholder="Ex: 15.00" step="0.01" min="0">
+      </div>
+      <div>
+        <label>Qtd total da embalagem</label>
+        <input id="iQtdTotal" type="number" placeholder="Ex: 200" step="0.01" min="0">
+      </div>
+    </div>
+
+    <label>Unidade</label>
+    <select id="iUnidade">
+      <option value="g">g — gramas</option>
+      <option value="ml">ml — mililitros</option>
+      <option value="unidade">unidade(s)</option>
+      <option value="kg">kg — quilos</option>
+      <option value="L">L — litros</option>
+    </select>
+
+    <button class="btn btn-primary" onclick="addIngrediente()">+ Adicionar ingrediente</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Ingredientes cadastrados</div>
+    <div id="listaIngredientes"><div class="empty-state">🧂 Nenhum ingrediente ainda.<br>Cadastre o primeiro ali em cima!</div></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 2 — PEDIDOS
+══════════════════════════════════════════════ -->
+<div class="page" id="tab2">
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Novo pedido</div>
+
+    <label>Cliente</label>
+    <input id="pCliente" placeholder="Nome do cliente">
+
+    <label>Produto</label>
+    <input id="pProduto" placeholder="Ex: Bolo de chocolate">
+
+    <label>Valor de venda (R$)</label>
+    <div class="row">
+      <input id="pValor" type="number" placeholder="Ex: 45.00" step="0.01" min="0">
+      <button class="btn btn-outline" style="margin-top:0;" onclick="preencherValorDaReceita()">↙ Usar preço da receita</button>
+    </div>
+
+    <button class="btn btn-primary" onclick="addPedido()">+ Adicionar pedido</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Pedidos registrados</div>
+    <div id="listaPedidos"><div class="empty-state">📋 Nenhum pedido registrado ainda.<br>Adicione o primeiro ali em cima!</div></div>
+    <div id="totalPedidosDiv" style="display:none;">
+      <div class="total-bar">
+        <span>Total faturado</span>
+        <span class="result-value green" id="totalPedidosValor">R$ 0,00</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 3 — DASHBOARD
+══════════════════════════════════════════════ -->
+<div class="page" id="tab3">
+
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-label">💰 Faturado</div>
+      <div class="dash-value" id="dFaturado" style="color:var(--green)">R$ 0</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">📋 Pedidos</div>
+      <div class="dash-value" id="dPedidos" style="color:var(--accent)">0</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">🧂 Ingredientes</div>
+      <div class="dash-value" id="dIngredientes" style="color:var(--amber)">0</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">💎 Ticket médio</div>
+      <div class="dash-value" id="dTicket" style="color:var(--accent2)">R$ 0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--green)"></span>Backup de dados</div>
+    <button class="btn btn-green" onclick="exportarDados()">⬆️ Exportar dados (JSON)</button>
+    <label style="margin-top:12px;">Importar backup</label>
+    <input type="file" id="importFile" accept=".json" style="padding:8px;">
+    <button class="btn btn-outline" onclick="importarDados()">⬇️ Importar dados (JSON)</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--red)"></span>Gerenciar dados</div>
+    <button class="btn btn-red" onclick="confirmarLimpar('receita')">🗑 Limpar receita atual</button>
+    <button class="btn btn-red" onclick="confirmarLimpar('pedidos')">🗑 Limpar todos os pedidos</button>
+    <button class="btn btn-red" onclick="confirmarLimpar('produtos')">🗑 Limpar todos os produtos</button>
+    <button class="btn btn-red" onclick="confirmarLimpar('tudo')">⚠️ Limpar tudo</button>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 4 — PRODUTOS
+══════════════════════════════════════════════ -->
+<div class="page" id="tab4">
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Produtos cadastrados</div>
+    <div id="listaProdutos"><div class="empty-state">🎂 Nenhum produto ainda.<br>Cadastre um novo produto ali em baixo!</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span><span id="produtoFormTitulo">Novo produto</span></div>
+
+    <label>Nome do produto</label>
+    <input id="pdNome" placeholder="Ex: Bolo Nuvem">
+
+    <div class="row">
+      <div>
+        <label>Peso final (kg)</label>
+        <input id="pdPeso" type="number" step="0.01" min="0" placeholder="Ex: 1.5">
+      </div>
+      <div>
+        <label>Rendimento (porções)</label>
+        <input id="pdRendimento" type="number" step="1" min="1" placeholder="Ex: 12">
+      </div>
+    </div>
+
+    <div class="section-divider" style="margin-top:18px;">🥣 Adicionar ingrediente por etapa</div>
+
+    <label>Etapa</label>
+    <select id="pdEtapa">
+      <option value="massa">🎂 Massa</option>
+      <option value="recheio">🍯 Recheio</option>
+      <option value="cobertura">🎨 Cobertura</option>
+      <option value="decoracao">✨ Decoração</option>
+    </select>
+
+    <label>Ingrediente</label>
+    <select id="pdSelect" onchange="aoSelecionarIngredienteProduto()">
+      <option value="">— selecionar ingrediente —</option>
+    </select>
+
+    <div id="pdMeta" style="display:none; margin-top:8px;">
+      <span class="chip" id="pdChip"></span>
+    </div>
+
+    <label>Quantidade usada</label>
+    <div class="row">
+      <input id="pdQtdUsada" type="number" placeholder="Ex: 50" step="0.01" min="0">
+      <input id="pdUnidadeDisplay" readonly placeholder="unidade" style="color:var(--muted);">
+    </div>
+
+    <button class="btn btn-primary" onclick="adicionarNoProduto()">+ Adicionar à etapa</button>
+
+    <div class="section-divider" style="margin-top:20px;">🎂 Massa</div>
+    <div id="listaPdMassa"><div class="empty-state" style="padding:8px 0;">Nenhum ingrediente na massa.</div></div>
+
+    <div class="section-divider" style="margin-top:16px;">🍯 Recheio</div>
+    <div id="listaPdRecheio"><div class="empty-state" style="padding:8px 0;">Nenhum ingrediente no recheio.</div></div>
+
+    <div class="section-divider" style="margin-top:16px;">🎨 Cobertura</div>
+    <div id="listaPdCobertura"><div class="empty-state" style="padding:8px 0;">Nenhum ingrediente na cobertura.</div></div>
+
+    <div class="section-divider" style="margin-top:16px;">✨ Decoração</div>
+    <div id="listaPdDecoracao"><div class="empty-state" style="padding:8px 0;">Nenhum ingrediente na decoração.</div></div>
+
+    <div class="section-divider" style="margin-top:20px;">💰 Custos adicionais</div>
+    <div class="extras-grid">
+      <div>
+        <label>🔥 Gás (R$)</label>
+        <input id="pdGas" type="number" placeholder="0.00" step="0.01" min="0" value="2.00">
+      </div>
+      <div>
+        <label>⚡ Energia (R$)</label>
+        <input id="pdEnergia" type="number" placeholder="0.00" step="0.01" min="0" value="0">
+      </div>
+      <div>
+        <label>📦 Embalagem (R$)</label>
+        <input id="pdEmbalagem" type="number" placeholder="0.00" step="0.01" min="0" value="2.00">
+      </div>
+    </div>
+
+    <div class="section-divider" style="margin-top:16px;">🧑‍🍳 Mão de obra</div>
+    <div class="row">
+      <div>
+        <label>Valor da sua hora (R$)</label>
+        <select id="pdValorHora">
+          <option value="20">R$ 20,00</option>
+          <option value="25">R$ 25,00</option>
+          <option value="30">R$ 30,00</option>
+        </select>
+      </div>
+      <div>
+        <label>Tempo gasto (horas)</label>
+        <input id="pdHoras" type="number" placeholder="Ex: 1.5" step="0.1" min="0" value="0">
+      </div>
+    </div>
+
+    <div class="section-divider" style="margin-top:16px;">📉 Perda, taxas e margem</div>
+
+    <label>🗑️ Perda/desperdício (%)</label>
+    <input id="pdPerda" type="number" placeholder="Ex: 8" step="1" min="0" max="100" value="8">
+
+    <label>💳 Taxa do cartão, Pix ou iFood (%)</label>
+    <input id="pdTaxa" type="number" placeholder="Ex: 5" step="0.1" min="0" max="95" value="5">
+
+    <label>Margem de lucro (%)</label>
+    <input id="pdMargem" type="number" placeholder="Ex: 50" step="1" min="0" value="50">
+
+    <button class="btn btn-outline" onclick="calcularProduto()">✓ Calcular custo e preço</button>
+
+    <div class="result-box receipt" id="pdResultFinal" style="display:none;">
+      <div class="result-row">
+        <span class="result-label">🎂 Custo massa</span>
+        <span class="result-value" id="pdCustoMassa"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">🍯 Custo recheio</span>
+        <span class="result-value" id="pdCustoRecheio"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">🎨 Custo cobertura</span>
+        <span class="result-value" id="pdCustoCobertura"></span>
+      </div>
+      <div class="result-row" id="pdRowDecoracao" style="display:none;">
+        <span class="result-label">✨ Custo decoração</span>
+        <span class="result-value" id="pdCustoDecoracao"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Custo ingredientes</span>
+        <span class="result-value" id="pdCustoIng"></span>
+      </div>
+      <div class="result-row" id="pdRowPerda" style="display:none;">
+        <span class="result-label">🗑️ Perda/desperdício</span>
+        <span class="result-value amber" id="pdPerdaValor"></span>
+      </div>
+      <div class="result-row" id="pdRowMaoObra" style="display:none;">
+        <span class="result-label">🧑‍🍳 Mão de obra</span>
+        <span class="result-value amber" id="pdMaoObra"></span>
+      </div>
+      <div class="result-row" id="pdRowExtras" style="display:none;">
+        <span class="result-label">Gás/energia/embalagem</span>
+        <span class="result-value amber" id="pdExtras"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Custo total</span>
+        <span class="result-value" id="pdCusto"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Custo por porção</span>
+        <span class="result-value" id="pdCustoPorcao"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Preço de venda / porção</span>
+        <span class="result-value big" id="pdVenda"></span>
+      </div>
+      <div class="result-row" id="pdRowVendaTotal" style="display:none;">
+        <span class="result-label">Preço de venda total</span>
+        <span class="result-value big green" id="pdVendaTotal"></span>
+      </div>
+      <div class="result-row" id="pdRowTaxa" style="display:none;">
+        <span class="result-label">💳 Taxa cartão/Pix/iFood</span>
+        <span class="result-value red" id="pdTaxaValor"></span>
+      </div>
+      <div class="result-row" id="pdRowLucro" style="display:none;">
+        <span class="result-label">💎 Lucro estimado (líquido)</span>
+        <span class="result-value green" id="pdLucro"></span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="salvarProduto()">💾 Salvar produto</button>
+    <button class="btn btn-outline" onclick="cancelarEdicaoProduto()" id="pdBtnCancelar" style="display:none;">✕ Cancelar edição</button>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Ordem importa: cada arquivo pode usar funções/variáveis dos anteriores.
+     Se criar um módulo novo, adicione-o aqui na ordem certa. -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/dados.js"></script>
+<script src="js/migracoes.js"></script>
+<script src="js/navegacao.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/ingredientes.js"></script>
+<script src="js/receita.js"></script>
+<script src="js/pedidos.js"></script>
+<script src="js/produtos.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
