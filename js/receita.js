@@ -260,6 +260,14 @@ const RECEITAS_PRONTAS = {
     { nome: 'Leite integral',        qtd: 240, unidade: 'ml'      }, // pra molhar a massa
     { nome: 'Canela em pó',          qtd: 2,   unidade: 'g'       }, // finalizar, a gosto
   ],
+  // Brownie de forma 25x25x3, cortado em cubos de 5x5cm (25 pedaços)
+  brownie: [
+    { nome: 'Ovos',                  qtd: 4,   unidade: 'unidade' },
+    { nome: 'Açúcar',                qtd: 500, unidade: 'g'       },
+    { nome: 'Óleo',                  qtd: 210, unidade: 'ml'      },
+    { nome: 'Chocolate em pó 50%',   qtd: 140, unidade: 'g'       },
+    { nome: 'Farinha de trigo',      qtd: 185, unidade: 'g'       },
+  ],
 };
 
 function getBolo() {
@@ -306,11 +314,12 @@ const RENDIMENTO_INFO = {
   bolo:        { nome: '🍫 Bolo de Prestígio', peso: '~3 kg (bolo inteiro)',   fracionado: '12 potes de 250g', porcoes: 12 },
   boloNuvem:   { nome: '🍰 Bolo Nuvem',         peso: '~1.5 kg (bolo inteiro)', fracionado: '12 fatias',         porcoes: 12 },
   boloIndiano: { nome: '🇮🇳 Bolo Indiano',      peso: '~1.2 kg (forma 27x18cm)', fracionado: '10-12 fatias',    porcoes: 10 },
+  brownie:     { nome: '🍫 Brownie',            peso: '~1.2 kg (forma 25x25x3cm)', fracionado: '25 pedaços 5x5cm', porcoes: 25 },
 };
 
 function carregarReceita(tipo) {
   const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : tipo === 'boloIndiano' ? getBoloIndiano() : RECEITAS_PRONTAS[tipo];
-  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano' };
+  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano', brownie: '🍫 Brownie' };
 
   const faltando = itens.filter(item => !buscarIngrediente(item.nome));
   if (faltando.length) {

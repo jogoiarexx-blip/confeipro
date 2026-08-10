@@ -6,6 +6,17 @@
 <!-- Se trocar --bg em css/tema.css, atualize a cor abaixo também -->
 <meta name="theme-color" content="#FFF8F0">
 <title>Confeipro</title>
+
+<!-- PWA: manifest + ícones -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icons/icon-512.png" sizes="512x512" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Confeipro">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
@@ -81,6 +92,7 @@
     <button class="btn btn-preset" onclick="carregarReceita('indianoMassa')">🍞 Carregar massa indiana</button>
     <button class="btn btn-preset" onclick="carregarReceita('indianoCobertura')">🍮 Carregar cobertura indiana</button>
     <button class="btn btn-preset" onclick="carregarReceita('boloIndiano')" style="border-color:var(--accent2);color:var(--accent2)">🇮🇳 Bolo Indiano (completo)</button>
+    <button class="btn btn-preset" onclick="carregarReceita('brownie')" style="border-color:var(--accent);color:var(--accent)">🍫 Brownie (forma 25x25x3)</button>
   </div>
 
   <div class="card">
@@ -632,5 +644,17 @@
 <script src="js/pedidos.js"></script>
 <script src="js/produtos.js"></script>
 <script src="js/app.js"></script>
+
+<!-- Registro do Service Worker (PWA instalável + offline).
+     Caminho relativo — funciona tanto na raiz quanto em subpasta
+     de projeto do GitHub Pages (ex: usuario.github.io/confeipro/). -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('service-worker.js')
+      .catch(function (err) { console.warn('SW não registrado:', err); });
+  });
+}
+</script>
 </body>
 </html>
