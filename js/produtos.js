@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════
 function criarProdutoVazio() {
   return {
-    id: null, nome: '', categoria: '', pesoFinal: '', rendimento: '',
+    id: null, nome: '', categoria: '', pesoFinal: '', pesoPorcao: '', rendimento: '',
     massa: [], recheio: [], cobertura: [], decoracao: [],
     embalagem: 2, gas: 2, energia: 0, valorHora: 20, horas: 0,
     perda: 8, taxa: 5, margem: 50,
@@ -275,10 +275,30 @@ function renderEtapasProduto() {
   renderListaEtapa('decoracao',  'listaPdDecoracao');
 }
 
+// Rendimento automático: peso final (kg) ÷ peso por porção (g) = nº de
+// porções. Só entra em ação se os dois campos estiverem preenchidos; se
+// "peso por porção" ficar vazio, o campo Rendimento volta a ser 100%
+// manual (comportamento antigo).
+function atualizarRendimentoAuto() {
+  const pesoKg     = parseFloat(document.getElementById('pdPeso').value)       || 0;
+  const pesoPorcaoG = parseFloat(document.getElementById('pdPesoPorcao').value) || 0;
+  const tag = document.getElementById('pdRendimentoAutoTag');
+
+  if (pesoKg > 0 && pesoPorcaoG > 0) {
+    const porcoes = Math.max(1, Math.round((pesoKg * 1000) / pesoPorcaoG));
+    document.getElementById('pdRendimento').value = porcoes;
+    tag.textContent = '🔄 calculado automaticamente';
+  } else {
+    tag.textContent = '';
+  }
+  autoCalcularProduto();
+}
+
 function lerFormularioProduto() {
   produtoEmEdicao.nome       = document.getElementById('pdNome').value.trim();
   produtoEmEdicao.categoria  = document.getElementById('pdCategoria').value.trim();
   produtoEmEdicao.pesoFinal  = parseFloat(document.getElementById('pdPeso').value)       || 0;
+  produtoEmEdicao.pesoPorcao = parseFloat(document.getElementById('pdPesoPorcao').value) || 0;
   produtoEmEdicao.rendimento = parseFloat(document.getElementById('pdRendimento').value) || 1;
   produtoEmEdicao.gas        = numNaoNegativo(document.getElementById('pdGas').value);
   produtoEmEdicao.energia    = numNaoNegativo(document.getElementById('pdEnergia').value);
@@ -402,7 +422,9 @@ function preencherFormProduto(p) {
   document.getElementById('pdNome').value       = produtoEmEdicao.nome;
   document.getElementById('pdCategoria').value  = produtoEmEdicao.categoria || '';
   document.getElementById('pdPeso').value        = produtoEmEdicao.pesoFinal;
+  document.getElementById('pdPesoPorcao').value  = produtoEmEdicao.pesoPorcao || '';
   document.getElementById('pdRendimento').value  = produtoEmEdicao.rendimento;
+  document.getElementById('pdRendimentoAutoTag').textContent = produtoEmEdicao.pesoPorcao ? '🔄 calculado automaticamente' : '';
   document.getElementById('pdGas').value         = produtoEmEdicao.gas;
   document.getElementById('pdEnergia').value     = produtoEmEdicao.energia;
   document.getElementById('pdEmbalagem').value   = produtoEmEdicao.embalagem;
@@ -425,7 +447,9 @@ function resetFormProduto() {
   document.getElementById('pdNome').value       = '';
   document.getElementById('pdCategoria').value  = '';
   document.getElementById('pdPeso').value        = '';
+  document.getElementById('pdPesoPorcao').value  = '';
   document.getElementById('pdRendimento').value  = '';
+  document.getElementById('pdRendimentoAutoTag').textContent = '';
   document.getElementById('pdGas').value         = 2;
   document.getElementById('pdEnergia').value     = 0;
   document.getElementById('pdEmbalagem').value   = 2;

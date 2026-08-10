@@ -268,6 +268,24 @@ const RECEITAS_PRONTAS = {
     { nome: 'Chocolate em pó 50%',   qtd: 140, unidade: 'g'       },
     { nome: 'Farinha de trigo',      qtd: 185, unidade: 'g'       },
   ],
+  // Sonho de padaria — massa frita recheada com creme de confeiteiro.
+  // Rendimento de referência: 20 unidades grandes (~60g) ou 60 pequenas (~20g).
+  sonhoMassa: [
+    { nome: 'Leite integral',          qtd: 250, unidade: 'ml'      },
+    { nome: 'Fermento biológico seco', qtd: 20,  unidade: 'g'       }, // 2 colheres de sopa
+    { nome: 'Açúcar',                  qtd: 50,  unidade: 'g'       }, // 4 colheres de sopa
+    { nome: 'Manteiga sem sal',        qtd: 30,  unidade: 'g'       }, // 2 colheres de sopa
+    { nome: 'Ovos',                    qtd: 3,   unidade: 'unidade' },
+    { nome: 'Sal refinado',            qtd: 3,   unidade: 'g'       }, // 1/2 colher de chá
+    { nome: 'Farinha de trigo',        qtd: 600, unidade: 'g'       }, // 5 xícaras de chá
+  ],
+  sonhoRecheio: [
+    { nome: 'Leite integral',          qtd: 1000, unidade: 'ml'      }, // 1 litro
+    { nome: 'Farinha de trigo',        qtd: 180,  unidade: 'g'       }, // 1 1/2 xícara de chá
+    { nome: 'Açúcar',                  qtd: 200,  unidade: 'g'       }, // 1 xícara de chá
+    { nome: 'Gemas',                   qtd: 3,    unidade: 'unidade' },
+    { nome: 'Essência de baunilha',    qtd: 5,    unidade: 'ml'      }, // 1 colher de chá
+  ],
 };
 
 function getBolo() {
@@ -310,16 +328,30 @@ function getBoloIndiano() {
   return Object.values(mapa);
 }
 
+function getSonho() {
+  const todos = [
+    ...RECEITAS_PRONTAS.sonhoMassa,
+    ...RECEITAS_PRONTAS.sonhoRecheio,
+  ];
+  const mapa = {};
+  todos.forEach(item => {
+    if (mapa[item.nome]) mapa[item.nome].qtd += item.qtd;
+    else mapa[item.nome] = { ...item };
+  });
+  return Object.values(mapa);
+}
+
 const RENDIMENTO_INFO = {
   bolo:        { nome: '🍫 Bolo de Prestígio', peso: '~3 kg (bolo inteiro)',   fracionado: '12 potes de 250g', porcoes: 12 },
   boloNuvem:   { nome: '🍰 Bolo Nuvem',         peso: '~1.5 kg (bolo inteiro)', fracionado: '12 fatias',         porcoes: 12 },
   boloIndiano: { nome: '🇮🇳 Bolo Indiano',      peso: '~1.2 kg (forma 27x18cm)', fracionado: '10-12 fatias',    porcoes: 10 },
   brownie:     { nome: '🍫 Brownie',            peso: '~1.2 kg (forma 25x25x3cm)', fracionado: '25 pedaços 5x5cm', porcoes: 25 },
+  sonho:       { nome: '🍩 Sonho',              peso: '~1.2 kg (massa + recheio)', fracionado: '20 unidades (~60g cada)', porcoes: 20 },
 };
 
 function carregarReceita(tipo) {
-  const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : tipo === 'boloIndiano' ? getBoloIndiano() : RECEITAS_PRONTAS[tipo];
-  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano', brownie: '🍫 Brownie' };
+  const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : tipo === 'boloIndiano' ? getBoloIndiano() : tipo === 'sonho' ? getSonho() : RECEITAS_PRONTAS[tipo];
+  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano', brownie: '🍫 Brownie', sonhoMassa: '🍩 Massa do Sonho', sonhoRecheio: '🍮 Recheio do Sonho', sonho: '🍩 Sonho (completo)' };
 
   const faltando = itens.filter(item => !buscarIngrediente(item.nome));
   if (faltando.length) {
