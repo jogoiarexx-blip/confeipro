@@ -7,7 +7,7 @@
 // O app detecta sozinho que a versão mudou e mescla o que falta nos
 // dados de quem já usava o app, sem apagar nada que o usuário já
 // tenha customizado. Nada de migração manual.
-const APP_VERSION = 11;
+const APP_VERSION = 12;
 
 const EXEMPLOS = [
   { nome: 'Chocolate em pó 50%',   precoTotal: 15,  qtdTotal: 200,  unidade: 'g'       },
@@ -39,6 +39,8 @@ const EXEMPLOS = [
   { nome: 'Farinha de rosca',      precoTotal: 7,   qtdTotal: 500,  unidade: 'g'       },
   { nome: 'Canela em pó',          precoTotal: 6,   qtdTotal: 50,   unidade: 'g'       },
   { nome: 'Gemas',                 precoTotal: 30,  qtdTotal: 30,   unidade: 'unidade' },
+  { nome: 'Mel',                   precoTotal: 28,  qtdTotal: 1000, unidade: 'g'       }, // comprado a R$28/litro
+  { nome: 'Especiarias',           precoTotal: 65,  qtdTotal: 1000, unidade: 'g'       }, // mix (cravo/gengibre/etc.) a R$65/kg
 ];
 
 let ingredientes = JSON.parse(localStorage.getItem('cpIngredientes') || 'null');

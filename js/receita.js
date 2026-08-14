@@ -286,6 +286,19 @@ const RECEITAS_PRONTAS = {
     { nome: 'Gemas',                   qtd: 3,    unidade: 'unidade' },
     { nome: 'Essência de baunilha',    qtd: 5,    unidade: 'ml'      }, // 1 colher de chá
   ],
+  // Pão de mel — massa levada ao forno + banho de doce de leite.
+  paoDeMel: [
+    { nome: 'Ovos',                  qtd: 2,   unidade: 'unidade' },
+    { nome: 'Açúcar mascavo',        qtd: 150, unidade: 'g'       },
+    { nome: 'Mel',                   qtd: 150, unidade: 'g'       },
+    { nome: 'Leite integral',        qtd: 240, unidade: 'ml'      },
+    { nome: 'Manteiga sem sal',      qtd: 50,  unidade: 'g'       },
+    { nome: 'Chocolate em pó 50%',   qtd: 20,  unidade: 'g'       },
+    { nome: 'Farinha de trigo',      qtd: 240, unidade: 'g'       },
+    { nome: 'Fermento em pó',        qtd: 12,  unidade: 'g'       },
+    { nome: 'Especiarias',           qtd: 5,   unidade: 'g'       }, // canela/cravo/gengibre a gosto
+    { nome: 'Doce de leite',         qtd: 400, unidade: 'g'       }, // banho/cobertura
+  ],
 };
 
 function getBolo() {
@@ -347,11 +360,12 @@ const RENDIMENTO_INFO = {
   boloIndiano: { nome: '🇮🇳 Bolo Indiano',      peso: '~1.2 kg (forma 27x18cm)', fracionado: '10-12 fatias',    porcoes: 10 },
   brownie:     { nome: '🍫 Brownie',            peso: '~1.2 kg (forma 25x25x3cm)', fracionado: '25 pedaços 5x5cm', porcoes: 25 },
   sonho:       { nome: '🍩 Sonho',              peso: '~1.2 kg (massa + recheio)', fracionado: '20 unidades (~60g cada)', porcoes: 20 },
+  paoDeMel:    { nome: '🍯 Pão de Mel',         peso: '~1.7 kg (massa + banho de doce de leite)', fracionado: '20 unidades (~85g cada)', porcoes: 20 },
 };
 
 function carregarReceita(tipo) {
   const itens = tipo === 'bolo' ? getBolo() : tipo === 'boloNuvem' ? getBoloNuvem() : tipo === 'boloIndiano' ? getBoloIndiano() : tipo === 'sonho' ? getSonho() : RECEITAS_PRONTAS[tipo];
-  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano', brownie: '🍫 Brownie', sonhoMassa: '🍩 Massa do Sonho', sonhoRecheio: '🍮 Recheio do Sonho', sonho: '🍩 Sonho (completo)' };
+  const nomes = { chocolate: '🍫 Recheio Chocolate', coco: '🥥 Recheio Coco', massa: '🎂 Massa', bolo: '🍫 Bolo de Prestígio', boloNuvem: '🍰 Bolo Nuvem', indianoMassa: '🍞 Massa Indiana', indianoCobertura: '🍮 Cobertura Indiana', boloIndiano: '🇮🇳 Bolo Indiano', brownie: '🍫 Brownie', sonhoMassa: '🍩 Massa do Sonho', sonhoRecheio: '🍮 Recheio do Sonho', sonho: '🍩 Sonho (completo)', paoDeMel: '🍯 Pão de Mel' };
 
   const faltando = itens.filter(item => !buscarIngrediente(item.nome));
   if (faltando.length) {
