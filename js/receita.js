@@ -439,3 +439,83 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById(id).addEventListener('change', salvarConfigReceita);
   });
 });
+
+// ═══════════════════════════════════════════
+// UI RETRÁTIL E BUSCA — ABA RECEITA
+// ═══════════════════════════════════════════
+function normalizarBuscaReceita(txt) {
+  return String(txt || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function toggleSecaoReceitasProntas(forcarAberto) {
+  const conteudo = document.getElementById('conteudoReceitasProntas');
+  const icone = document.getElementById('iconeReceitasProntas');
+  const cabecalho = conteudo && conteudo.previousElementSibling;
+  if (!conteudo) return;
+
+  const abrir = typeof forcarAberto === 'boolean' ? forcarAberto : conteudo.hidden;
+  conteudo.hidden = !abrir;
+  conteudo.classList.toggle('open', abrir);
+  if (icone) icone.classList.toggle('open', abrir);
+  if (cabecalho) cabecalho.setAttribute('aria-expanded', String(abrir));
+
+  if (abrir) {
+    const busca = document.getElementById('pesquisaReceita');
+    if (busca && !busca.value) setTimeout(() => busca.focus(), 30);
+  }
+}
+
+function filtrarReceitasProntas() {
+  const campo = document.getElementById('pesquisaReceita');
+  const termo = normalizarBuscaReceita(campo ? campo.value : '');
+  const botoes = Array.from(document.querySelectorAll('#listaReceitasProntas .receita-preset'));
+  let visiveis = 0;
+
+  botoes.forEach(btn => {
+    const base = normalizarBuscaReceita(`${btn.dataset.recipeName || ''} ${btn.textContent || ''}`);
+    const mostrar = !termo || base.includes(termo);
+    btn.style.display = mostrar ? '' : 'none';
+    if (mostrar) visiveis++;
+  });
+
+  const vazio = document.getElementById('semReceitasEncontradas');
+  if (vazio) vazio.style.display = visiveis ? 'none' : 'block';
+}
+
+function toggleIngredientesReceita(forcarAberto) {
+  const conteudo = document.getElementById('conteudoIngredientesReceita');
+  const icone = document.getElementById('iconeIngredientesReceita');
+  const cabecalho = conteudo && conteudo.previousElementSibling;
+  if (!conteudo) return;
+
+  const estaAberto = !conteudo.hidden;
+  const abrir = typeof forcarAberto === 'boolean' ? forcarAberto : !estaAberto;
+  conteudo.hidden = !abrir;
+  conteudo.classList.toggle('open', abrir);
+  if (icone) icone.classList.toggle('open', abrir);
+  if (cabecalho) cabecalho.setAttribute('aria-expanded', String(abrir));
+}
+
+function atualizarContadoresReceitaUI() {
+  const qtdIng = document.getElementById('qtdIngredientesReceita');
+  if (qtdIng) qtdIng.textContent = receita.length;
+
+  const qtdProntas = document.getElementById('qtdReceitasProntas');
+  if (qtdProntas) qtdProntas.textContent = document.querySelectorAll('#listaReceitasProntas .receita-preset').length;
+}
+
+// Mantém os contadores sincronizados sem alterar a lógica original.
+const _renderReceitaOriginal = renderReceita;
+renderReceita = function() {
+  _renderReceitaOriginal();
+  atualizarContadoresReceitaUI();
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  atualizarContadoresReceitaUI();
+  filtrarReceitasProntas();
+});

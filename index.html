@@ -82,21 +82,34 @@
 
 <div class="page active" id="tab0">
 
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>Receitas prontas</div>
-    <button class="btn btn-preset" onclick="carregarReceita('chocolate')">🍫 Carregar receita chocolate</button>
-    <button class="btn btn-preset" onclick="carregarReceita('coco')">🥥 Carregar receita coco</button>
-    <button class="btn btn-preset" onclick="carregarReceita('massa')">🎂 Carregar massa</button>
-    <button class="btn btn-preset" onclick="carregarReceita('bolo')" style="border-color:var(--accent2);color:var(--accent2)">🍫 Bolo de Prestígio (completo)</button>
-    <button class="btn btn-preset" onclick="carregarReceita('boloNuvem')" style="border-color:var(--accent);color:var(--accent)">🍰 Bolo Nuvem (completo)</button>
-    <button class="btn btn-preset" onclick="carregarReceita('indianoMassa')">🍞 Carregar massa indiana</button>
-    <button class="btn btn-preset" onclick="carregarReceita('indianoCobertura')">🍮 Carregar cobertura indiana</button>
-    <button class="btn btn-preset" onclick="carregarReceita('boloIndiano')" style="border-color:var(--accent2);color:var(--accent2)">🇮🇳 Bolo Indiano (completo)</button>
-    <button class="btn btn-preset" onclick="carregarReceita('brownie')" style="border-color:var(--accent);color:var(--accent)">🍫 Brownie (forma 25x25x3)</button>
-    <button class="btn btn-preset" onclick="carregarReceita('sonhoMassa')">🍩 Carregar massa do sonho</button>
-    <button class="btn btn-preset" onclick="carregarReceita('sonhoRecheio')">🍮 Carregar recheio do sonho</button>
-    <button class="btn btn-preset" onclick="carregarReceita('sonho')" style="border-color:var(--accent2);color:var(--accent2)">🍩 Sonho (completo)</button>
-    <button class="btn btn-preset" onclick="carregarReceita('paoDeMel')" style="border-color:var(--accent);color:var(--accent)">🍯 Pão de Mel (completo)</button>
+  <div class="card collapsible-card">
+    <button class="collapsible-header" type="button" onclick="toggleSecaoReceitasProntas()" aria-expanded="false" aria-controls="conteudoReceitasProntas">
+      <span class="collapsible-title"><span class="dot"></span>Receitas prontas <span class="section-count" id="qtdReceitasProntas">13</span></span>
+      <span class="collapsible-chevron" id="iconeReceitasProntas">⌄</span>
+    </button>
+
+    <div class="collapsible-content" id="conteudoReceitasProntas" hidden>
+      <div class="recipe-search-wrap">
+        <span class="recipe-search-icon">🔎</span>
+        <input id="pesquisaReceita" type="search" placeholder="Pesquisar receita..." oninput="filtrarReceitasProntas()" autocomplete="off">
+      </div>
+      <div id="listaReceitasProntas">
+        <button class="btn btn-preset receita-preset" data-recipe-name="recheio chocolate chocolate" onclick="carregarReceita('chocolate')">🍫 Carregar receita chocolate</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="recheio coco coco" onclick="carregarReceita('coco')">🥥 Carregar receita coco</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="massa bolo" onclick="carregarReceita('massa')">🎂 Carregar massa</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="bolo prestigio completo chocolate coco" onclick="carregarReceita('bolo')" style="border-color:var(--accent2);color:var(--accent2)">🍫 Bolo de Prestígio (completo)</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="bolo nuvem completo" onclick="carregarReceita('boloNuvem')" style="border-color:var(--accent);color:var(--accent)">🍰 Bolo Nuvem (completo)</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="massa indiana bolo indiano" onclick="carregarReceita('indianoMassa')">🍞 Carregar massa indiana</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="cobertura indiana bolo indiano" onclick="carregarReceita('indianoCobertura')">🍮 Carregar cobertura indiana</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="bolo indiano completo" onclick="carregarReceita('boloIndiano')" style="border-color:var(--accent2);color:var(--accent2)">🇮🇳 Bolo Indiano (completo)</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="brownie chocolate forma 25x25" onclick="carregarReceita('brownie')" style="border-color:var(--accent);color:var(--accent)">🍫 Brownie (forma 25x25x3)</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="massa sonho" onclick="carregarReceita('sonhoMassa')">🍩 Carregar massa do sonho</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="recheio sonho creme" onclick="carregarReceita('sonhoRecheio')">🍮 Carregar recheio do sonho</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="sonho completo" onclick="carregarReceita('sonho')" style="border-color:var(--accent2);color:var(--accent2)">🍩 Sonho (completo)</button>
+        <button class="btn btn-preset receita-preset" data-recipe-name="pao de mel completo doce de leite" onclick="carregarReceita('paoDeMel')" style="border-color:var(--accent);color:var(--accent)">🍯 Pão de Mel (completo)</button>
+      </div>
+      <div class="empty-state compact-empty" id="semReceitasEncontradas" style="display:none;">🔎 Nenhuma receita encontrada.</div>
+    </div>
   </div>
 
   <div class="card">
@@ -128,13 +141,18 @@
     <button class="btn btn-primary" onclick="adicionarNaReceita()">+ Adicionar à receita</button>
   </div>
 
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>Receita atual</div>
-    <div id="listaReceita"><div class="empty-state">🥣 Sua receita está vazia.<br>Escolha um ingrediente acima e clique em "Adicionar à receita".</div></div>
-    <div id="receitaTotal" style="display:none;">
-      <div class="total-bar">
-        <span>Custo ingredientes</span>
-        <span class="result-value green" id="totalReceita">R$ 0,00</span>
+  <div class="card collapsible-card">
+    <button class="collapsible-header" type="button" onclick="toggleIngredientesReceita()" aria-expanded="true" aria-controls="conteudoIngredientesReceita">
+      <span class="collapsible-title"><span class="dot"></span>Ingredientes da receita <span class="section-count" id="qtdIngredientesReceita">0</span></span>
+      <span class="collapsible-chevron open" id="iconeIngredientesReceita">⌄</span>
+    </button>
+    <div class="collapsible-content open" id="conteudoIngredientesReceita">
+      <div id="listaReceita"><div class="empty-state">🥣 Sua receita está vazia.<br>Escolha um ingrediente acima e clique em "Adicionar à receita".</div></div>
+      <div id="receitaTotal" style="display:none;">
+        <div class="total-bar">
+          <span>Custo ingredientes</span>
+          <span class="result-value green" id="totalReceita">R$ 0,00</span>
+        </div>
       </div>
     </div>
   </div>
