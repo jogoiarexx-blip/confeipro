@@ -360,7 +360,7 @@ const RENDIMENTO_INFO = {
   boloIndiano: { nome: '🇮🇳 Bolo Indiano',      peso: '~1.2 kg (forma 27x18cm)', fracionado: '10-12 fatias',    porcoes: 10 },
   brownie:     { nome: '🍫 Brownie',            peso: '~1.2 kg (forma 25x25x3cm)', fracionado: '25 pedaços 5x5cm', porcoes: 25 },
   sonho:       { nome: '🍩 Sonho',              peso: '~1.2 kg (massa + recheio)', fracionado: '20 unidades (~60g cada)', porcoes: 20 },
-  paoDeMel:    { nome: '🍯 Pão de Mel',         peso: '~1.7 kg (massa + banho de doce de leite)', fracionado: '20 unidades (~85g cada)', porcoes: 20 },
+  paoDeMel:    { nome: '🍯 Pão de Mel',         peso: '~1.7 kg (massa + banho de doce de leite)', fracionado: '15 unidades (~115g cada)', porcoes: 15 },
 };
 
 function carregarReceita(tipo) {

@@ -11,5 +11,5 @@ const CONFIG = {
   nomeBase:    'Confei',                    // primeira parte do nome
   nomeDestaque:'pro',                       // parte destacada (cor --accent)
   tagline:     'sua calculadora de preços', // subtítulo abaixo do nome
-  versao:      'v1.2',                      // selo de versão no cabeçalho
+  versao:      'v1.3',                      // selo de versão no cabeçalho
 };
