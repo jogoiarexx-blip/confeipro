@@ -7,7 +7,7 @@
 // O app detecta sozinho que a versão mudou e mescla o que falta nos
 // dados de quem já usava o app, sem apagar nada que o usuário já
 // tenha customizado. Nada de migração manual.
-const APP_VERSION = 12;
+const APP_VERSION = 13;
 
 const EXEMPLOS = [
   { nome: 'Chocolate em pó 50%',   precoTotal: 15,  qtdTotal: 200,  unidade: 'g'       },
@@ -41,6 +41,10 @@ const EXEMPLOS = [
   { nome: 'Gemas',                 precoTotal: 30,  qtdTotal: 30,   unidade: 'unidade' },
   { nome: 'Mel',                   precoTotal: 28,  qtdTotal: 1000, unidade: 'g'       }, // comprado a R$28/litro
   { nome: 'Especiarias',           precoTotal: 65,  qtdTotal: 1000, unidade: 'g'       }, // mix (cravo/gengibre/etc.) a R$65/kg
+  { nome: 'Biscoito maisena',      precoTotal: 4.69, qtdTotal: 350, unidade: 'g'       },
+  { nome: 'Gelatina sabor morango', precoTotal: 2.5, qtdTotal: 1, unidade: 'unidade'   },
+  { nome: 'Morango fresco',        precoTotal: 6.99, qtdTotal: 250, unidade: 'g'       },
+  { nome: 'Amendoim triturado',    precoTotal: 15, qtdTotal: 500, unidade: 'g'         },
 ];
 
 let ingredientes = JSON.parse(localStorage.getItem('cpIngredientes') || 'null');
@@ -101,6 +105,48 @@ function criarProdutoBoloNuvemPadrao() {
     perda:      8,
     taxa:       5,
     margem:     50,
+  };
+}
+
+// Sobremesa no pote — rendimento de 10 unidades de aproximadamente 135g.
+// A margem de 64% faz o preço calculado ficar próximo de R$13 por unidade,
+// já incluindo embalagem, produção, perdas e taxa de pagamento.
+function criarProdutoNinhoMorangoPadrao() {
+  return {
+    id: 'produto_ninho_morango_padrao',
+    nome: 'Sobremesa de Ninho com Morango',
+    categoria: 'Sobremesas no pote',
+    pesoFinal: 1.35,
+    pesoPorcao: 135,
+    rendimento: 10,
+    massa: itensParaEtapa([
+      { nome: 'Biscoito maisena', qtd: 150, unidade: 'g' },
+      { nome: 'Manteiga sem sal', qtd: 42, unidade: 'g' },
+    ]),
+    recheio: itensParaEtapa([
+      { nome: 'Leite condensado', qtd: 390, unidade: 'g' },
+      { nome: 'Creme de leite', qtd: 200, unidade: 'g' },
+      { nome: 'Leite em pó', qtd: 40, unidade: 'g' },
+      { nome: 'Leite integral', qtd: 600, unidade: 'ml' },
+      { nome: 'Amido de milho', qtd: 24, unidade: 'g' },
+      { nome: 'Chocolate branco (cobertura)', qtd: 100, unidade: 'g' },
+    ]),
+    cobertura: itensParaEtapa([
+      { nome: 'Gelatina sabor morango', qtd: 1, unidade: 'unidade' },
+      { nome: 'Amido de milho', qtd: 3, unidade: 'g' },
+      { nome: 'Morango fresco', qtd: 250, unidade: 'g' },
+    ]),
+    decoracao: itensParaEtapa([
+      { nome: 'Amendoim triturado', qtd: 30, unidade: 'g' },
+    ]),
+    embalagem: 9.8,
+    gas: 2,
+    energia: 1,
+    valorHora: 20,
+    horas: 1,
+    perda: 8,
+    taxa: 5,
+    margem: 64,
   };
 }
 

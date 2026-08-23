@@ -5,7 +5,7 @@
 // padrão no futuro, só criar a função (tipo criarProdutoBoloNuvemPadrao)
 // e incluir aqui — o merge abaixo cuida do resto.
 function produtosPadrao() {
-  return [criarProdutoBoloNuvemPadrao()];
+  return [criarProdutoBoloNuvemPadrao(), criarProdutoNinhoMorangoPadrao()];
 }
 
 // Adiciona em `ingredientes` qualquer item de EXEMPLOS que ainda não
