@@ -571,7 +571,7 @@ function atualizarContadoresReceitaUI() {
   if (qtdIng) qtdIng.textContent = receita.length;
 
   const qtdProntas = document.getElementById('qtdReceitasProntas');
-  if (qtdProntas) qtdProntas.textContent = document.querySelectorAll('#listaReceitasProntas .receita-preset').length;
+  if (qtdProntas) qtdProntas.textContent = document.querySelectorAll('#listaReceitasProntas .receita-preset').length + (typeof receitasGerenciaveis !== 'undefined' ? receitasGerenciaveis.length : 0);
 }
 
 // Mantém os contadores sincronizados sem alterar a lógica original.
@@ -592,6 +592,46 @@ document.addEventListener('DOMContentLoaded', function() {
 // ═══════════════════════════════════════════════════════════
 let receitasGerenciaveis = JSON.parse(localStorage.getItem('cpReceitasGerenciaveis') || '[]');
 let receitaGerenciavelEditandoId = null;
+
+function inicializarBibliotecaPadrao() {
+  if (localStorage.getItem('cpReceitasBibliotecaInicializada') === '1') return;
+  const nomes = {
+    chocolate:'Recheio Chocolate', coco:'Recheio Coco', massa:'Massa de Bolo',
+    bolo:'Bolo de Prestígio', boloNuvem:'Bolo Nuvem', indianoMassa:'Massa Indiana',
+    indianoCobertura:'Cobertura Indiana', boloIndiano:'Bolo Indiano', brownie:'Brownie',
+    sonhoMassa:'Massa do Sonho', sonhoRecheio:'Recheio do Sonho', sonho:'Sonho Completo',
+    paoDeMel:'Pão de Mel'
+  };
+  Object.keys(nomes).forEach(tipo => {
+    const id = 'rec_padrao_' + tipo;
+    if (receitasGerenciaveis.some(r => r.id === id)) return;
+    const base = tipo === 'bolo' ? getBolo()
+      : tipo === 'boloNuvem' ? getBoloNuvem()
+      : tipo === 'boloIndiano' ? getBoloIndiano()
+      : tipo === 'sonho' ? getSonho()
+      : RECEITAS_PRONTAS[tipo];
+    if (!base) return;
+    const itens = base.map(item => {
+      const ing = buscarIngrediente(item.nome);
+      return {
+        nome: ing ? ing.nome : item.nome,
+        qtd: item.qtd,
+        unidade: ing ? ing.unidade : item.unidade,
+        custo: ing ? arred(custoPorUnidade(ing) * item.qtd) : 0
+      };
+    });
+    receitasGerenciaveis.push({
+      id, nome: nomes[tipo], itens,
+      porcoes: RENDIMENTO_INFO[tipo]?.porcoes || 1,
+      config: {},
+      padrao: true,
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString()
+    });
+  });
+  localStorage.setItem('cpReceitasBibliotecaInicializada', '1');
+  salvarReceitasGerenciaveis();
+}
 
 function salvarReceitasGerenciaveis() {
   localStorage.setItem('cpReceitasGerenciaveis', JSON.stringify(receitasGerenciaveis));
@@ -765,5 +805,6 @@ function escalarReceitaParaPorcoes() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  inicializarBibliotecaPadrao();
   renderReceitasGerenciaveis();
 });
