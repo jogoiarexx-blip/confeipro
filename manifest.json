@@ -1,8 +1,8 @@
 {
   "name": "Confeipro",
   "short_name": "Confeipro",
-  "description": "Gestão de custos, receitas e produtos para confeitaria",
-  "start_url": "./index.html",
+  "description": "Gestão de custos, receitas, pedidos, clientes e estoque para confeitaria",
+  "start_url": "./index.html?tab=3",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -33,6 +33,53 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "id": "./index.html",
+  "categories": [
+    "business",
+    "productivity",
+    "food"
+  ],
+  "shortcuts": [
+    {
+      "name": "Novo pedido",
+      "short_name": "Pedido",
+      "description": "Abrir a área de pedidos",
+      "url": "./index.html?tab=2",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Receitas",
+      "short_name": "Receitas",
+      "description": "Abrir receitas",
+      "url": "./index.html?tab=0",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "short_name": "Produtos",
+      "description": "Abrir produtos",
+      "url": "./index.html?tab=4",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
