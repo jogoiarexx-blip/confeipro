@@ -6,6 +6,10 @@ function goTab(idx) {
     item.classList.toggle('active', Number(item.dataset.tab) === idx);
   });
   document.querySelectorAll('.page').forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.querySelectorAll('.mobile-nav-item[data-mobile-tab]').forEach(item => {
+    item.classList.toggle('active', Number(item.dataset.mobileTab) === idx);
+  });
+  if (typeof atualizarFabMobile === 'function') atualizarFabMobile(idx);
   if (idx === 3) atualizarDashboard();
   const main = document.querySelector('.main-content');
   if (main) main.scrollTop = 0;
