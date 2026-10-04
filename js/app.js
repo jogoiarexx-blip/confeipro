@@ -14,7 +14,9 @@ function aplicarConfigVisual() {
 // ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   aplicarConfigVisual();
+  atualizarInfoPWA();
   iniciarPWA();
+  atualizarFabMobile(0);
   if (typeof iniciarGestao === 'function') iniciarGestao();
   const dataPedido = document.getElementById('pDataPedido');
   if (dataPedido && !dataPedido.value && typeof hojeISO === 'function') dataPedido.value = hojeISO();
@@ -172,4 +174,51 @@ function aplicarAtalhoDaURL() {
 
 function abrirMaisMobile() {
   if (typeof abrirSidebar === 'function') abrirSidebar();
+}
+
+
+let tabMobileAtual = 0;
+
+function atualizarInfoPWA() {
+  const versao = document.getElementById('pwaVersionInfo');
+  const modo = document.getElementById('pwaInstallMode');
+  if (versao) versao.textContent = CONFIG.versao;
+  if (modo) modo.textContent = estaModoInstalado() ? 'Instalado' : 'Navegador';
+}
+
+function atualizarFabMobile(idx) {
+  tabMobileAtual = idx;
+  const fab = document.getElementById('mobileFab');
+  if (!fab) return;
+  const cfg = {
+    0: { rotulo: 'Adicionar ingrediente à receita', texto: '＋' },
+    1: { rotulo: 'Novo ingrediente', texto: '＋' },
+    2: { rotulo: 'Novo pedido', texto: '＋' },
+    3: { rotulo: 'Novo pedido', texto: '＋' },
+    4: { rotulo: 'Novo produto', texto: '＋' },
+    5: { rotulo: 'Novo cliente', texto: '＋' },
+  }[idx] || { rotulo: 'Nova ação', texto: '＋' };
+  fab.setAttribute('aria-label', cfg.rotulo);
+  fab.title = cfg.rotulo;
+  fab.textContent = cfg.texto;
+}
+
+function acaoFabMobile() {
+  const focar = function(id) {
+    setTimeout(function() {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function() { el.focus(); }, 250);
+    }, 80);
+  };
+
+  if (tabMobileAtual === 0) return focar('rSelect');
+  if (tabMobileAtual === 1) return focar('iNome');
+  if (tabMobileAtual === 2) return focar('pCliente');
+  if (tabMobileAtual === 4) return focar('pdNome');
+  if (tabMobileAtual === 5) return focar('cNome');
+
+  goTab(2);
+  focar('pCliente');
 }
