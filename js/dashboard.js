@@ -9,17 +9,33 @@ function atualizarDashboard() {
   const ticket = validos.length ? arred(total / validos.length) : 0;
 
   const agora = new Date();
-  const mes = arred(validos.filter(p => {
+  const pedidosMes = validos.filter(p => {
     const base = p.dataPedido || (p.criadoEm ? String(p.criadoEm).slice(0,10) : '');
     if (!base) return false;
     const [a,m] = base.split('-').map(Number);
     return a === agora.getFullYear() && m === agora.getMonth()+1;
-  }).reduce((s,p) => s + (parseFloat(p.valor)||0),0));
+  });
+  const mes = arred(pedidosMes.reduce((s,p) => s + (parseFloat(p.valor)||0),0));
+  const lucroMes = arred(pedidosMes.reduce((s,p) => s + (p.lucroEstimado != null ? parseFloat(p.lucroEstimado)||0 : (parseFloat(p.valor)||0)-(parseFloat(p.custoTotal)||0)),0));
+  const margemReal = total > 0 ? arred((lucro / total) * 100) : 0;
 
   let maisVendido = '—';
+  let maisLucrativo = '—';
   if (produtos.length) {
     const ranked = produtos.map(p => ({p, qtd: contarVendasProduto(p.nome, p.id)})).sort((a,b)=>b.qtd-a.qtd);
     if (ranked[0]?.qtd > 0) maisVendido = ranked[0].p.nome + ' (' + ranked[0].qtd + ')';
+
+    const lucroPorProduto = new Map();
+    validos.forEach(ped => {
+      if (!ped.produtoId) return;
+      const l = ped.lucroEstimado != null ? parseFloat(ped.lucroEstimado)||0 : (parseFloat(ped.valor)||0)-(parseFloat(ped.custoTotal)||0);
+      lucroPorProduto.set(ped.produtoId, (lucroPorProduto.get(ped.produtoId)||0) + l);
+    });
+    const top = [...lucroPorProduto.entries()].sort((a,b)=>b[1]-a[1])[0];
+    if (top) {
+      const prod = produtos.find(p=>p.id===top[0]);
+      if (prod) maisLucrativo = prod.nome + ' (' + fmt(top[1]) + ')';
+    }
   }
 
   document.getElementById('dFaturado').textContent = fmt(total);
@@ -29,7 +45,10 @@ function atualizarDashboard() {
   const dc = document.getElementById('dCustos'); if (dc) dc.textContent = fmt(custos);
   const dl = document.getElementById('dLucro'); if (dl) dl.textContent = fmt(lucro);
   const dm = document.getElementById('dMes'); if (dm) dm.textContent = fmt(mes);
+  const dlm = document.getElementById('dLucroMes'); if (dlm) dlm.textContent = fmt(lucroMes);
+  const dmr = document.getElementById('dMargemReal'); if (dmr) dmr.textContent = margemReal.toFixed(1).replace('.', ',') + '%';
   const dv = document.getElementById('dMaisVendido'); if (dv) dv.textContent = maisVendido;
+  const dml = document.getElementById('dMaisLucrativo'); if (dml) dml.textContent = maisLucrativo;
 }
 
 // ═══════════════════════════════════════════
