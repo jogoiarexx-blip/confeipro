@@ -539,12 +539,19 @@ function filtrarReceitasProntas() {
   const campo = document.getElementById('pesquisaReceita');
   const termo = normalizarBuscaReceita(campo ? campo.value : '');
   const botoes = Array.from(document.querySelectorAll('#listaReceitasProntas .receita-preset'));
+  const gerenciaveis = Array.from(document.querySelectorAll('#listaReceitasGerenciaveis .managed-recipe-card'));
   let visiveis = 0;
 
   botoes.forEach(btn => {
     const base = normalizarBuscaReceita(`${btn.dataset.recipeName || ''} ${btn.textContent || ''}`);
     const mostrar = !termo || base.includes(termo);
     btn.style.display = mostrar ? '' : 'none';
+    if (mostrar && btn.offsetParent !== null) visiveis++;
+  });
+  gerenciaveis.forEach(card => {
+    const base = normalizarBuscaReceita(card.dataset.recipeName || card.textContent || '');
+    const mostrar = !termo || base.includes(termo);
+    card.style.display = mostrar ? '' : 'none';
     if (mostrar) visiveis++;
   });
 
@@ -571,7 +578,9 @@ function atualizarContadoresReceitaUI() {
   if (qtdIng) qtdIng.textContent = receita.length;
 
   const qtdProntas = document.getElementById('qtdReceitasProntas');
-  if (qtdProntas) qtdProntas.textContent = document.querySelectorAll('#listaReceitasProntas .receita-preset').length + (typeof receitasGerenciaveis !== 'undefined' ? receitasGerenciaveis.length : 0);
+  if (qtdProntas) qtdProntas.textContent = (typeof receitasGerenciaveis !== 'undefined' && receitasGerenciaveis.length)
+    ? receitasGerenciaveis.length
+    : document.querySelectorAll('#listaReceitasProntas .receita-preset').length;
 }
 
 // Mantém os contadores sincronizados sem alterar a lógica original.
@@ -743,8 +752,12 @@ function renderReceitasGerenciaveis() {
     el.innerHTML = '<div class="empty-state compact-empty">💾 Salve a receita atual para criar sua biblioteca editável.</div>';
     return;
   }
+  const originais = document.getElementById('listaReceitasProntas');
+  const divider = document.getElementById('modelosOriginaisDivider');
+  if (originais) originais.style.display = 'none';
+  if (divider) divider.style.display = 'none';
   el.innerHTML = receitasGerenciaveis.map(r => `
-    <div class="managed-recipe-card">
+    <div class="managed-recipe-card" data-recipe-name="${escapeHtml(r.nome)}">
       <input class="managed-recipe-name" value="${escapeHtml(r.nome)}" onchange="renomearReceitaGerenciavel('${r.id}', this.value)" aria-label="Nome da receita">
       <div class="managed-recipe-meta">${(r.itens||[]).length} ingrediente(s) · ${r.porcoes||1} porção(ões)</div>
       <div class="mini-actions">
