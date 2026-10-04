@@ -14,6 +14,9 @@ function aplicarConfigVisual() {
 // ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   aplicarConfigVisual();
+  if (typeof iniciarGestao === 'function') iniciarGestao();
+  const dataPedido = document.getElementById('pDataPedido');
+  if (dataPedido && !dataPedido.value && typeof hojeISO === 'function') dataPedido.value = hojeISO();
 
   renderIngredientes();
   atualizarSelect();
@@ -26,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Precificação automática do produto: recalcula ao digitar em qualquer campo
   ['pdNome','pdPeso','pdRendimento','pdGas','pdEnergia','pdEmbalagem',
-   'pdValorHora','pdHoras','pdPerda','pdTaxa','pdMargem'].forEach(id => {
+   'pdValorHora','pdHoras','pdPerda','pdTaxa','pdMargem','pdTipoMargem'].forEach(id => {
     document.getElementById(id).addEventListener('input', autoCalcularProduto);
   });
 });
