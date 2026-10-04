@@ -128,7 +128,7 @@ function editarPedido(id) {
   if (!p) return;
   editandoPedidoId = id;
   document.getElementById('pCliente').value = p.cliente || '';
-  document.getElementById('pProduto').value = p.produto || '';
+  document.getElementById('pProduto').value = produtos.find(x => x.id === p.produtoId)?.nome || p.produto || '';
   document.getElementById('pQuantidade').value = p.quantidade || 1;
   document.getElementById('pValor').value = p.valor || '';
   document.getElementById('pSinal').value = p.sinal || 0;
@@ -219,13 +219,14 @@ function renderPedidos() {
     lista.innerHTML = itens.map(p => {
       const saldo = arred((parseFloat(p.valor)||0) - (parseFloat(p.sinal)||0));
       const custo = parseFloat(p.custoTotal) || 0;
+      const nomeProdutoAtual = produtos.find(x => x.id === p.produtoId)?.nome || p.produto || '';
       const lucro = p.lucroEstimado != null ? parseFloat(p.lucroEstimado) : arred((parseFloat(p.valor)||0)-custo);
       return `
       <div class="pedido-card">
         <div class="pedido-card-head">
           <div>
             <div class="pedido-cliente">${escapeHtml(p.cliente || '')}</div>
-            <div class="pedido-produto">${escapeHtml(p.produto || '')} · ${p.quantidade || 1} un.</div>
+            <div class="pedido-produto">${escapeHtml(nomeProdutoAtual)} · ${p.quantidade || 1} un.</div>
           </div>
           <span class="pedido-valor">${fmt(p.valor || 0)}</span>
         </div>
