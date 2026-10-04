@@ -5,7 +5,7 @@
 // (ou pelo menos junto do APP_VERSION em js/dados.js), senão
 // os usuários instalados continuam vendo a versão antiga.
 // ═══════════════════════════════════════════
-const CACHE_NAME = 'confeipro-v14';
+const CACHE_NAME = 'confeipro-v20';
 
 // Caminhos relativos ao escopo do SW — funciona tanto na raiz
 // quanto num subdiretório de projeto do GitHub Pages
@@ -26,6 +26,7 @@ const ARQUIVOS_PARA_CACHE = [
   './js/navegacao.js',
   './js/pedidos.js',
   './js/produtos.js',
+  './js/gestao.js',
   './js/receita.js',
   './js/tema.js',
   './js/utils.js',
