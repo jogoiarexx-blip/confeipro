@@ -7,7 +7,7 @@
 // O app detecta sozinho que a versão mudou e mescla o que falta nos
 // dados de quem já usava o app, sem apagar nada que o usuário já
 // tenha customizado. Nada de migração manual.
-const APP_VERSION = 14;
+const APP_VERSION = 20;
 
 const EXEMPLOS = [
   { nome: 'Chocolate em pó 50%',   precoTotal: 15,  qtdTotal: 200,  unidade: 'g'       },
@@ -152,8 +152,20 @@ function criarProdutoNinhoMorangoPadrao() {
 
 let produtos = JSON.parse(localStorage.getItem('cpProdutos') || 'null');
 if (!produtos) { produtos = [criarProdutoBoloNuvemPadrao()]; salvarProdutos(); }
-function salvarProdutos() { localStorage.setItem('cpProdutos', JSON.stringify(produtos)); }
+function salvarProdutos() {
+  localStorage.setItem('cpProdutos', JSON.stringify(produtos));
+  if (typeof registrarSnapshotAutomatico === 'function') registrarSnapshotAutomatico();
+}
 
-function salvarIng()     { localStorage.setItem('cpIngredientes', JSON.stringify(ingredientes)); }
-function salvarPedidos() { localStorage.setItem('cpPedidos',      JSON.stringify(pedidos));      }
-function salvarReceita() { localStorage.setItem('cpReceita',      JSON.stringify(receita));      }
+function salvarIng() {
+  localStorage.setItem('cpIngredientes', JSON.stringify(ingredientes));
+  if (typeof registrarSnapshotAutomatico === 'function') registrarSnapshotAutomatico();
+}
+function salvarPedidos() {
+  localStorage.setItem('cpPedidos', JSON.stringify(pedidos));
+  if (typeof registrarSnapshotAutomatico === 'function') registrarSnapshotAutomatico();
+}
+function salvarReceita() {
+  localStorage.setItem('cpReceita', JSON.stringify(receita));
+  if (typeof registrarSnapshotAutomatico === 'function') registrarSnapshotAutomatico();
+}
