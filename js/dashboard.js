@@ -2,19 +2,47 @@
 // DASHBOARD
 // ═══════════════════════════════════════════
 function atualizarDashboard() {
-  const total   = arred(pedidos.reduce((s, p) => s + parseFloat(p.valor), 0));
-  const ticket  = pedidos.length ? arred(total / pedidos.length) : 0;
-  document.getElementById('dFaturado').textContent    = fmt(total);
-  document.getElementById('dPedidos').textContent     = pedidos.length;
+  const validos = pedidos.filter(p => p.status !== 'cancelado');
+  const total = arred(validos.reduce((s,p) => s + (parseFloat(p.valor)||0), 0));
+  const custos = arred(validos.reduce((s,p) => s + (parseFloat(p.custoTotal)||0), 0));
+  const lucro = arred(validos.reduce((s,p) => s + (p.lucroEstimado != null ? parseFloat(p.lucroEstimado)||0 : (parseFloat(p.valor)||0)-(parseFloat(p.custoTotal)||0)), 0));
+  const ticket = validos.length ? arred(total / validos.length) : 0;
+
+  const agora = new Date();
+  const mes = arred(validos.filter(p => {
+    const base = p.dataPedido || (p.criadoEm ? String(p.criadoEm).slice(0,10) : '');
+    if (!base) return false;
+    const [a,m] = base.split('-').map(Number);
+    return a === agora.getFullYear() && m === agora.getMonth()+1;
+  }).reduce((s,p) => s + (parseFloat(p.valor)||0),0));
+
+  let maisVendido = '—';
+  if (produtos.length) {
+    const ranked = produtos.map(p => ({p, qtd: contarVendasProduto(p.nome, p.id)})).sort((a,b)=>b.qtd-a.qtd);
+    if (ranked[0]?.qtd > 0) maisVendido = ranked[0].p.nome + ' (' + ranked[0].qtd + ')';
+  }
+
+  document.getElementById('dFaturado').textContent = fmt(total);
+  document.getElementById('dPedidos').textContent = validos.length;
   document.getElementById('dIngredientes').textContent = ingredientes.length;
-  document.getElementById('dTicket').textContent      = fmt(ticket);
+  document.getElementById('dTicket').textContent = fmt(ticket);
+  const dc = document.getElementById('dCustos'); if (dc) dc.textContent = fmt(custos);
+  const dl = document.getElementById('dLucro'); if (dl) dl.textContent = fmt(lucro);
+  const dm = document.getElementById('dMes'); if (dm) dm.textContent = fmt(mes);
+  const dv = document.getElementById('dMaisVendido'); if (dv) dv.textContent = maisVendido;
 }
 
 // ═══════════════════════════════════════════
 // BACKUP — EXPORTAR / IMPORTAR
 // ═══════════════════════════════════════════
 function exportarDados() {
-  const dados = { ingredientes, pedidos, receita, produtos, exportadoEm: new Date().toISOString() };
+  const dados = {
+    schema: 2, ingredientes, pedidos, receita, produtos,
+    clientes: typeof clientes !== 'undefined' ? clientes : [],
+    receitasGerenciaveis: typeof receitasGerenciaveis !== 'undefined' ? receitasGerenciaveis : [],
+    configReceita: JSON.parse(localStorage.getItem('cpConfigReceita') || '{}'),
+    exportadoEm: new Date().toISOString()
+  };
   const blob  = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   const url   = URL.createObjectURL(blob);
   const a     = document.createElement('a');
@@ -22,6 +50,8 @@ function exportarDados() {
   a.download  = `confeipro-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  localStorage.setItem('cpUltimoBackupExportado', new Date().toISOString());
+  if (typeof renderStatusBackup === 'function') renderStatusBackup();
   toast('✓ Backup exportado!');
 }
 
@@ -52,7 +82,13 @@ function validarIngredientesBackup(lista) {
     if (!valido) { invalidos++; return; }
 
     const norm = normalizarUnidade(qtdTotal, unidade);
-    validos.push({ nome, precoTotal, qtdTotal: norm.qtd, unidade: norm.unidade });
+    validos.push({
+      ...ing,
+      nome, precoTotal, qtdTotal: norm.qtd, unidade: norm.unidade,
+      estoqueQtd: Math.max(0, parseFloat(ing?.estoqueQtd)||0),
+      estoqueMin: Math.max(0, parseFloat(ing?.estoqueMin)||0),
+      historicoPrecos: Array.isArray(ing?.historicoPrecos) ? ing.historicoPrecos : []
+    });
   });
 
   return { validos, invalidos };
@@ -85,8 +121,13 @@ function importarDados() {
           pedidos      = dados.pedidos;
           receita      = dados.receita || [];
           produtos     = dados.produtos || [];
+          if (typeof clientes !== 'undefined') clientes = Array.isArray(dados.clientes) ? dados.clientes : [];
+          if (typeof receitasGerenciaveis !== 'undefined') receitasGerenciaveis = Array.isArray(dados.receitasGerenciaveis) ? dados.receitasGerenciaveis : [];
+          if (dados.configReceita) localStorage.setItem('cpConfigReceita', JSON.stringify(dados.configReceita));
 
           salvarIng(); salvarPedidos(); salvarReceita(); salvarProdutos();
+          if (typeof salvarClientes === 'function') salvarClientes();
+          if (typeof salvarReceitasGerenciaveis === 'function') salvarReceitasGerenciaveis();
 
           // O backup pode ser de uma versão antiga do app (com bugs já
           // corrigidos hoje, tipo custo zerado ou ingrediente padrão faltando).
@@ -96,6 +137,11 @@ function importarDados() {
           rodarMesclaEMigracoes(0);
 
           renderIngredientes(); atualizarSelect(); atualizarSelectProduto(); renderReceita(); renderPedidos(); renderProdutos(); atualizarDashboard();
+          if (typeof renderClientes === 'function') renderClientes();
+          if (typeof atualizarDatalistsGestao === 'function') atualizarDatalistsGestao();
+          if (typeof renderReceitasGerenciaveis === 'function') renderReceitasGerenciaveis();
+          if (typeof renderEstoqueResumo === 'function') renderEstoqueResumo();
+          if (typeof gerarListaCompras === 'function') gerarListaCompras();
 
           toast(qtdInvalidos > 0
             ? `✓ Dados importados — ${qtdInvalidos} ingrediente(s) inválido(s) foram ignorados`
