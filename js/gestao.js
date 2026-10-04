@@ -303,7 +303,14 @@ function renderStatusBackup() {
   const exportado = localStorage.getItem('cpUltimoBackupExportado');
   const a = auto[0]?.criadoEm ? new Date(auto[0].criadoEm).toLocaleString('pt-BR') : 'ainda não criado';
   const e = exportado ? new Date(exportado).toLocaleString('pt-BR') : 'nunca exportado';
-  el.innerHTML = `Backup automático local: <strong>${escapeHtml(a)}</strong><br>Último JSON exportado: <strong>${escapeHtml(e)}</strong>`;
+  let aviso = '';
+  if (!exportado) {
+    aviso = '<div class="backup-warning">⚠️ Faça um backup JSON externo para não depender apenas deste aparelho.</div>';
+  } else {
+    const dias = Math.floor((Date.now() - new Date(exportado).getTime()) / 86400000);
+    if (dias >= 15) aviso = `<div class="backup-warning">⚠️ Seu último backup externo tem ${dias} dias. Recomendamos exportar outro.</div>`;
+  }
+  el.innerHTML = `Backup automático local: <strong>${escapeHtml(a)}</strong><br>Último JSON exportado: <strong>${escapeHtml(e)}</strong>${aviso}`;
 }
 
 function restaurarUltimoBackupAutomatico() {
