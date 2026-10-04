@@ -7,7 +7,7 @@
 // O app detecta sozinho que a versão mudou e mescla o que falta nos
 // dados de quem já usava o app, sem apagar nada que o usuário já
 // tenha customizado. Nada de migração manual.
-const APP_VERSION = 13;
+const APP_VERSION = 14;
 
 const EXEMPLOS = [
   { nome: 'Chocolate em pó 50%',   precoTotal: 15,  qtdTotal: 200,  unidade: 'g'       },
