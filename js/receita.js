@@ -88,6 +88,36 @@ function delItemReceita(idx) {
   });
 }
 
+// Permite ajustar uma quantidade diretamente na receita atual.
+// O custo por unidade já salvo é preservado, igual ao comportamento dos
+// produtos, para não misturar preços antigos e novos sem o usuário pedir.
+function atualizarQtdItemReceita(idx, valor) {
+  const item = receita[idx];
+  if (!item) return;
+
+  const qtdNova = parseFloat(String(valor).replace(',', '.'));
+  if (!isFinite(qtdNova) || qtdNova <= 0) {
+    toast('⚠️ Informe uma quantidade maior que zero', 'err');
+    renderReceita();
+    return;
+  }
+
+  const qtdAnterior = parseFloat(item.qtd) || 0;
+  const custoAnterior = parseFloat(item.custo) || 0;
+  let custoUnitario = qtdAnterior > 0 ? custoAnterior / qtdAnterior : 0;
+
+  if (!isFinite(custoUnitario) || custoUnitario <= 0) {
+    const ing = buscarIngrediente(item.nome);
+    custoUnitario = ing ? custoPorUnidade(ing) : 0;
+  }
+
+  item.qtd = qtdNova;
+  item.custo = arred(custoUnitario * qtdNova);
+  salvarReceita();
+  renderReceita();
+  document.getElementById('resultFinal').style.display = 'none';
+}
+
 function renderReceita() {
   const lista    = document.getElementById('listaReceita');
   const totalDiv = document.getElementById('receitaTotal');
@@ -102,7 +132,20 @@ function renderReceita() {
     <div class="recipe-item">
       <div>
         <div class="recipe-name">${escapeHtml(item.nome)}</div>
-        <div class="recipe-sub">${item.qtd}${escapeHtml(item.unidade)}</div>
+        <div class="recipe-sub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <input
+            type="number"
+            value="${item.qtd}"
+            min="0.01"
+            step="0.01"
+            inputmode="decimal"
+            aria-label="Quantidade de ${escapeHtml(item.nome)}"
+            title="Altere a quantidade e saia do campo para recalcular"
+            onchange="atualizarQtdItemReceita(${i}, this.value)"
+            style="width:92px;padding:6px 8px;margin:0;"
+          >
+          <span>${escapeHtml(item.unidade)}</span>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="recipe-cost">${fmt(item.custo)}</span>
