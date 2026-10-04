@@ -6,7 +6,7 @@ function criarProdutoVazio() {
     id: null, nome: '', categoria: '', pesoFinal: '', pesoPorcao: '', rendimento: '',
     massa: [], recheio: [], cobertura: [], decoracao: [],
     embalagem: 2, gas: 2, energia: 0, valorHora: 20, horas: 0,
-    perda: 8, taxa: 5, margem: 50,
+    perda: 8, taxa: 5, margem: 50, tipoMargem: 'markup',
   };
 }
 
@@ -38,7 +38,14 @@ function calcularCustosProduto(p) {
   const custoTotal  = arred(custoIng + extras + maoObra);
   const custoPorcao = arred(custoTotal / porcoes);
 
-  const vendaPorcao = arred((custoPorcao * (1 + margem / 100)) / (1 - taxaPct / 100));
+  const tipoMargem = p.tipoMargem || 'markup';
+  let vendaPorcao;
+  if (tipoMargem === 'liquida') {
+    const divisor = 1 - (taxaPct / 100) - (margem / 100);
+    vendaPorcao = divisor > 0 ? arred(custoPorcao / divisor) : 0;
+  } else {
+    vendaPorcao = arred((custoPorcao * (1 + margem / 100)) / (1 - taxaPct / 100));
+  }
   const vendaTotal  = arred(vendaPorcao * porcoes);
   const valorTaxa   = arred(vendaTotal * (taxaPct / 100));
   const lucro       = arred(vendaTotal - custoTotal - valorTaxa);
@@ -52,9 +59,12 @@ function calcularCustosProduto(p) {
 // acento/maiúsculas), pra alimentar o filtro "Mais vendidos". Pedido
 // guarda o produto como texto livre (não tem vínculo por id), então essa
 // é a única forma de relacionar os dois sem mudar o cadastro de pedidos.
-function contarVendasProduto(nomeProduto) {
-  const alvo = norm(nomeProduto);
-  return pedidos.filter(p => norm(p.produto) === alvo).length;
+function contarVendasProduto(nomeProduto, produtoId) {
+  const alvo = norm(nomeProduto || '');
+  return pedidos.reduce((total, p) => {
+    const bate = produtoId ? p.produtoId === produtoId : norm(p.produto || '') === alvo;
+    return total + (bate ? Math.max(1, parseFloat(p.quantidade) || 1) : 0);
+  }, 0);
 }
 
 // Preenche o filtro de categoria com as categorias já usadas nos
@@ -102,7 +112,7 @@ function renderProdutos() {
   } else if (ordem === 'menorPreco') {
     itens.sort((a, b) => a.r.vendaPorcao - b.r.vendaPorcao);
   } else if (ordem === 'vendidos') {
-    itens.sort((a, b) => contarVendasProduto(b.p.nome) - contarVendasProduto(a.p.nome));
+    itens.sort((a, b) => contarVendasProduto(b.p.nome, b.p.id) - contarVendasProduto(a.p.nome, a.p.id));
   } else {
     itens.reverse(); // últimos cadastrados primeiro
   }
@@ -113,7 +123,7 @@ function renderProdutos() {
   }
 
   el.innerHTML = itens.map(({ p, r }) => {
-    const vendas = ordem === 'vendidos' ? contarVendasProduto(p.nome) : null;
+    const vendas = ordem === 'vendidos' ? contarVendasProduto(p.nome, p.id) : null;
     return `
     <div class="produto-card">
       <div class="produto-card-top">
@@ -127,6 +137,9 @@ function renderProdutos() {
       </div>
       <div class="produto-actions">
         <button class="btn btn-outline" onclick="editarProduto('${p.id}')">✎ Editar</button>
+        <button class="btn btn-outline" onclick="atualizarCustosProduto('${p.id}')">🔄 Preços</button>
+        <button class="btn btn-outline" onclick="criarPedidoDoProduto('${p.id}')">📋 Pedido</button>
+        <button class="btn btn-outline" onclick="imprimirFichaTecnica('${p.id}')">🖨 Ficha</button>
         <button class="btn btn-outline" onclick="duplicarProduto('${p.id}')">⧉ Duplicar</button>
         <button class="btn btn-red" onclick="excluirProduto('${p.id}')">🗑 Excluir</button>
       </div>
@@ -275,6 +288,49 @@ function atualizarQtdItemProduto(etapa, idx, valor) {
   autoCalcularProduto();
 }
 
+function trocarIngredienteItemProduto(etapa, idx, ingredienteIdx) {
+  const item = produtoEmEdicao[etapa]?.[idx];
+  const ing = ingredientes[parseInt(ingredienteIdx, 10)];
+  if (!item || !ing) return;
+  item.nome = ing.nome;
+  item.unidade = ing.unidade;
+  item.custo = arred(custoPorUnidade(ing) * (parseFloat(item.qtd) || 0));
+  renderEtapasProduto();
+  autoCalcularProduto();
+}
+
+function moverItemProduto(etapaAtual, idx, novaEtapa) {
+  if (!['massa','recheio','cobertura','decoracao'].includes(novaEtapa) || novaEtapa === etapaAtual) return;
+  const item = produtoEmEdicao[etapaAtual]?.splice(idx, 1)[0];
+  if (!item) return;
+  produtoEmEdicao[novaEtapa].push(item);
+  renderEtapasProduto();
+  autoCalcularProduto();
+}
+
+function atualizarCustosProduto(id) {
+  const p = produtos.find(x => x.id === id);
+  if (!p) return;
+  const antes = calcularCustosProduto(p).custoTotal;
+  let alterados = 0;
+  ['massa','recheio','cobertura','decoracao'].forEach(etapa => {
+    (p[etapa] || []).forEach(item => {
+      const ing = buscarIngrediente(item.nome);
+      if (!ing) return;
+      const novo = arred(custoPorUnidade(ing) * (parseFloat(item.qtd) || 0));
+      if (novo !== item.custo) alterados++;
+      item.nome = ing.nome;
+      item.unidade = ing.unidade;
+      item.custo = novo;
+    });
+  });
+  salvarProdutos();
+  renderProdutos();
+  if (editandoProdutoId === id) preencherFormProduto(p);
+  const depois = calcularCustosProduto(p).custoTotal;
+  toast(`✓ ${alterados} custo(s) atualizado(s): ${fmt(antes)} → ${fmt(depois)}`);
+}
+
 function renderListaEtapa(etapa, elId) {
   const el    = document.getElementById(elId);
   const itens = produtoEmEdicao[etapa];
@@ -289,6 +345,17 @@ function renderListaEtapa(etapa, elId) {
     <div class="recipe-item">
       <div>
         <div class="recipe-name">${escapeHtml(item.nome)}</div>
+        <div class="recipe-edit-grid">
+          <select aria-label="Trocar ingrediente" onchange="trocarIngredienteItemProduto('${etapa}', ${i}, this.value)">
+            ${ingredientes.map((ing, idxIng) => `<option value="${idxIng}" ${norm(ing.nome)===norm(item.nome)?'selected':''}>${escapeHtml(ing.nome)}</option>`).join('')}
+          </select>
+          <select aria-label="Mover etapa" onchange="moverItemProduto('${etapa}', ${i}, this.value)">
+            <option value="massa" ${etapa==='massa'?'selected':''}>Massa</option>
+            <option value="recheio" ${etapa==='recheio'?'selected':''}>Recheio</option>
+            <option value="cobertura" ${etapa==='cobertura'?'selected':''}>Cobertura</option>
+            <option value="decoracao" ${etapa==='decoracao'?'selected':''}>Decoração</option>
+          </select>
+        </div>
         <div class="recipe-sub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <input
             type="number"
@@ -352,6 +419,7 @@ function lerFormularioProduto() {
   produtoEmEdicao.perda      = parseFloat(document.getElementById('pdPerda').value)      || 0;
   produtoEmEdicao.taxa       = parseFloat(document.getElementById('pdTaxa').value)       || 0;
   produtoEmEdicao.margem     = parseFloat(document.getElementById('pdMargem').value)     || 0;
+  produtoEmEdicao.tipoMargem = document.getElementById('pdTipoMargem')?.value || 'markup';
 }
 
 function renderResultadoProduto(r) {
@@ -477,6 +545,7 @@ function preencherFormProduto(p) {
   document.getElementById('pdPerda').value       = produtoEmEdicao.perda;
   document.getElementById('pdTaxa').value        = produtoEmEdicao.taxa;
   document.getElementById('pdMargem').value      = produtoEmEdicao.margem;
+  const tm = document.getElementById('pdTipoMargem'); if (tm) tm.value = produtoEmEdicao.tipoMargem || 'markup';
 
   renderEtapasProduto();
   document.getElementById('produtoFormTitulo').textContent = `Editando: ${produtoEmEdicao.nome}`;
@@ -502,6 +571,7 @@ function resetFormProduto() {
   document.getElementById('pdPerda').value       = 8;
   document.getElementById('pdTaxa').value        = 5;
   document.getElementById('pdMargem').value      = 50;
+  const tm = document.getElementById('pdTipoMargem'); if (tm) tm.value = 'markup';
 
   renderEtapasProduto();
   document.getElementById('pdResultFinal').style.display = 'none';
@@ -529,6 +599,8 @@ function salvarProduto() {
   renderProdutos();
   resetFormProduto();
   atualizarDashboard();
+  if (typeof atualizarDatalistsGestao === 'function') atualizarDatalistsGestao();
+  if (typeof gerarListaCompras === 'function') gerarListaCompras();
   toast('✓ Produto salvo');
 }
 
@@ -549,6 +621,7 @@ function duplicarProduto(id) {
   produtos.push(copia);
   salvarProdutos();
   renderProdutos();
+  if (typeof atualizarDatalistsGestao === 'function') atualizarDatalistsGestao();
   toast(`✓ "${p.nome}" duplicado`);
 }
 
@@ -562,6 +635,8 @@ function excluirProduto(id) {
   if (editandoProdutoId === id) resetFormProduto();
   renderProdutos();
   atualizarDashboard();
+  if (typeof atualizarDatalistsGestao === 'function') atualizarDatalistsGestao();
+  if (typeof gerarListaCompras === 'function') gerarListaCompras();
 
   // Sem confirm() — dá pra desfazer no toast por alguns segundos.
   toast(`✓ "${p.nome}" removido`, null, function desfazerRemocaoProduto() {
