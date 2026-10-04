@@ -1,15 +1,12 @@
-// ═══════════════════════════════════════════
-// SERVICE WORKER — cache do app shell (offline + instalável)
-// ─────────────────────────────────────────────
-// Bump no CACHE_NAME sempre que os arquivos abaixo mudarem
-// (ou pelo menos junto do APP_VERSION em js/dados.js), senão
-// os usuários instalados continuam vendo a versão antiga.
-// ═══════════════════════════════════════════
-const CACHE_NAME = 'confeipro-v20';
+// ═══════════════════════════════════════════════════════════════
+// CONFEIPRO PWA — Service Worker v21
+// Navegação: network-first com fallback offline.
+// Assets: cache imediato + atualização em segundo plano.
+// Atualização: o app mostra "Atualizar agora" e envia SKIP_WAITING.
+// ═══════════════════════════════════════════════════════════════
+const CACHE_NAME = 'confeipro-v21';
+const OFFLINE_URL = './index.html';
 
-// Caminhos relativos ao escopo do SW — funciona tanto na raiz
-// quanto num subdiretório de projeto do GitHub Pages
-// (ex: usuario.github.io/confeipro/).
 const ARQUIVOS_PARA_CACHE = [
   './',
   './index.html',
@@ -36,49 +33,76 @@ const ARQUIVOS_PARA_CACHE = [
   './icons/icon-maskable-512.png',
 ];
 
-self.addEventListener('install', function (event) {
+self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function (cache) { return cache.addAll(ARQUIVOS_PARA_CACHE); })
-      .then(function () { return self.skipWaiting(); })
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(ARQUIVOS_PARA_CACHE);
+    })
   );
 });
 
-self.addEventListener('activate', function (event) {
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(function (nomes) {
-      return Promise.all(
-        nomes.filter(function (nome) { return nome !== CACHE_NAME; })
-             .map(function (nome) { return caches.delete(nome); })
-      );
-    }).then(function () { return self.clients.claim(); })
+    caches.keys()
+      .then(function(nomes) {
+        return Promise.all(
+          nomes
+            .filter(function(nome) { return nome.startsWith('confeipro-') && nome !== CACHE_NAME; })
+            .map(function(nome) { return caches.delete(nome); })
+        );
+      })
+      .then(function() { return self.clients.claim(); })
   );
 });
 
-// Estratégia: cache-first pro app shell, com atualização em segundo
-// plano (stale-while-revalidate) — abre rápido e sempre offline,
-// mas se pegar internet já busca a versão nova pra próxima visita.
-self.addEventListener('fetch', function (event) {
-  if (event.request.method !== 'GET') return;
+function respostaOfflineNavegacao() {
+  return caches.match(OFFLINE_URL).then(function(r) {
+    return r || caches.match('./');
+  });
+}
 
-  // Só trata pedidos same-origin (não mexe em fontes do Google etc.)
-  if (new URL(event.request.url).origin !== self.location.origin) return;
+self.addEventListener('fetch', function(event) {
+  const req = event.request;
+  if (req.method !== 'GET') return;
 
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // HTML/navegação deve preferir a rede para o usuário receber a interface nova
+  // assim que estiver online. Sem internet, cai para a cópia instalada.
+  if (req.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
+    event.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then(function(res) {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(function(cache) { cache.put(OFFLINE_URL, clone); });
+          }
+          return res;
+        })
+        .catch(respostaOfflineNavegacao)
+    );
+    return;
+  }
+
+  // Assets: resposta rápida do cache, mas atualiza silenciosamente pela rede.
   event.respondWith(
-    caches.match(event.request).then(function (respostaCache) {
-      const buscaRede = fetch(event.request).then(function (respostaRede) {
-        if (respostaRede && respostaRede.ok) {
-          const clone = respostaRede.clone();
-          caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, clone); });
+    caches.match(req).then(function(cacheHit) {
+      const rede = fetch(req).then(function(res) {
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(req, clone); });
         }
-        return respostaRede;
-      }).catch(function () {
-        // Sem rede: se não tem no cache e é navegação, cai pro index.html
-        if (event.request.mode === 'navigate') return caches.match('./index.html');
-        return undefined;
-      });
+        return res;
+      }).catch(function() { return cacheHit; });
 
-      return respostaCache || buscaRede;
+      return cacheHit || rede;
     })
   );
 });
