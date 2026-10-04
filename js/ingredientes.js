@@ -8,6 +8,8 @@ function limparFormularioIngrediente() {
   document.getElementById('iPrecoTotal').value = '';
   document.getElementById('iQtdTotal').value   = '';
   document.getElementById('iUnidade').value    = 'g';
+  const est = document.getElementById('iEstoque'); if (est) est.value = '';
+  const min = document.getElementById('iEstoqueMin'); if (min) min.value = '';
 }
 
 function salvarIngrediente() {
@@ -15,6 +17,8 @@ function salvarIngrediente() {
   const precoTotal     = parseFloat(document.getElementById('iPrecoTotal').value);
   const qtdTotalDigitada = parseFloat(document.getElementById('iQtdTotal').value);
   const unidadeDigitada  = document.getElementById('iUnidade').value;
+  const estoqueDigitado  = numNaoNegativo(document.getElementById('iEstoque')?.value);
+  const estoqueMinDigitado = numNaoNegativo(document.getElementById('iEstoqueMin')?.value);
 
   if (!nome) { toast('⚠️ Informe o nome do ingrediente', 'err'); return; }
   if (isNaN(precoTotal) || precoTotal <= 0) { toast('⚠️ Preço inválido', 'err'); return; }
@@ -29,14 +33,27 @@ function salvarIngrediente() {
   // as receitas/produtos usam pra calcular) é sempre g/ml.
   const { qtd: qtdTotal, unidade } = normalizarUnidade(qtdTotalDigitada, unidadeDigitada);
   const convertido = unidade !== unidadeDigitada;
+  const estoqueNorm = normalizarUnidade(estoqueDigitado, unidadeDigitada).qtd;
+  const estoqueMinNorm = normalizarUnidade(estoqueMinDigitado, unidadeDigitada).qtd;
 
   if (editandoIngredienteIdx !== null) {
-    ingredientes[editandoIngredienteIdx] = { nome, precoTotal, qtdTotal, unidade };
+    const anterior = ingredientes[editandoIngredienteIdx] || {};
+    const historicoPrecos = Array.isArray(anterior.historicoPrecos) ? anterior.historicoPrecos.slice() : [];
+    if (parseFloat(anterior.precoTotal) !== precoTotal && isFinite(parseFloat(anterior.precoTotal))) {
+      historicoPrecos.push({ data: new Date().toISOString(), de: parseFloat(anterior.precoTotal), para: precoTotal });
+    }
+    ingredientes[editandoIngredienteIdx] = {
+      ...anterior, nome, precoTotal, qtdTotal, unidade,
+      estoqueQtd: estoqueNorm, estoqueMin: estoqueMinNorm, historicoPrecos
+    };
     toast(convertido
       ? `✓ Ingrediente atualizado — convertido para ${qtdTotal}${unidade}`
-      : '✓ Ingrediente atualizado — receitas e produtos já salvos mantêm o preço antigo');
+      : '✓ Ingrediente atualizado — o histórico de preço foi preservado');
   } else {
-    ingredientes.push({ nome, precoTotal, qtdTotal, unidade });
+    ingredientes.push({
+      nome, precoTotal, qtdTotal, unidade,
+      estoqueQtd: estoqueNorm, estoqueMin: estoqueMinNorm, historicoPrecos: []
+    });
     toast(convertido
       ? `✓ Ingrediente adicionado — convertido para ${qtdTotal}${unidade}`
       : '✓ Ingrediente adicionado');
@@ -47,6 +64,8 @@ function salvarIngrediente() {
   atualizarSelect();
   atualizarSelectProduto();
   atualizarDashboard();
+  if (typeof renderEstoqueResumo === 'function') renderEstoqueResumo();
+  if (typeof gerarListaCompras === 'function') gerarListaCompras();
   cancelarEdicaoIngrediente();
 }
 
@@ -62,6 +81,8 @@ function editarIngrediente(idx) {
   document.getElementById('iPrecoTotal').value = ing.precoTotal;
   document.getElementById('iQtdTotal').value   = ing.qtdTotal;
   document.getElementById('iUnidade').value    = ing.unidade;
+  const est = document.getElementById('iEstoque'); if (est) est.value = ing.estoqueQtd ?? 0;
+  const min = document.getElementById('iEstoqueMin'); if (min) min.value = ing.estoqueMin ?? 0;
 
   document.getElementById('ingredienteFormTitulo').textContent = `Editando: ${ing.nome}`;
   document.getElementById('iBtnSalvar').textContent = '✓ Salvar alterações';
@@ -91,6 +112,8 @@ function delIngrediente(idx) {
   atualizarSelect();
   atualizarSelectProduto();
   atualizarDashboard();
+  if (typeof renderEstoqueResumo === 'function') renderEstoqueResumo();
+  if (typeof gerarListaCompras === 'function') gerarListaCompras();
 
   // Sem confirm() — dá pra desfazer no toast por alguns segundos.
   toast(`✓ "${ing.nome}" removido`, null, function desfazerRemocaoIngrediente() {
@@ -142,9 +165,10 @@ function renderIngredientes() {
     <div class="ing-item">
       <div class="ing-info">
         <div class="ing-name">${escapeHtml(ing.nome)}</div>
-        <div class="ing-meta">${ing.qtdTotal}${escapeHtml(ing.unidade)} · R$ ${ing.precoTotal.toFixed(2).replace('.', ',')}</div>
+        <div class="ing-meta">${ing.qtdTotal}${escapeHtml(ing.unidade)} · R$ ${ing.precoTotal.toFixed(2).replace('.', ',')} · estoque ${arred(parseFloat(ing.estoqueQtd)||0)}${escapeHtml(ing.unidade)}</div>
       </div>
       <div class="ing-unit-cost">R$${custoPorUnidade(ing).toFixed(4).replace('.', ',')}/${escapeHtml(ing.unidade)}</div>
+      <button class="btn-edit" onclick="verHistoricoIngrediente(${i})" aria-label="Histórico de preço" title="Histórico de preço">📈</button>
       <button class="btn-edit" onclick="editarIngrediente(${i})" aria-label="Editar">✎</button>
       <button class="btn-del" onclick="delIngrediente(${i})" aria-label="Remover">✕</button>
     </div>
