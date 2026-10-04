@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
 let registroPWA = null;
 let workerAtualizacaoPendente = null;
 let recarregandoPorAtualizacao = false;
+let adiarAtualizacaoAte = 0;
 
 function estaModoInstalado() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -60,7 +61,8 @@ function atualizarStatusConexao() {
   el.title = online ? 'Conectado — dados locais continuam salvos no aparelho' : 'Modo offline — seus dados continuam disponíveis neste aparelho';
 }
 
-function mostrarAtualizacaoPWA(worker) {
+function mostrarAtualizacaoPWA(worker, forcar) {
+  if (!forcar && Date.now() < adiarAtualizacaoAte) return;
   if (worker) workerAtualizacaoPendente = worker;
   const barra = document.getElementById('pwaUpdateBar');
   if (!barra) return;
@@ -69,6 +71,7 @@ function mostrarAtualizacaoPWA(worker) {
 }
 
 function ocultarAtualizacaoPWA() {
+  adiarAtualizacaoAte = Date.now() + 60 * 60 * 1000;
   const barra = document.getElementById('pwaUpdateBar');
   if (!barra) return;
   barra.classList.remove('show');
@@ -116,7 +119,7 @@ async function verificarAtualizacaoPWA(silencioso) {
   }
   try {
     await registroPWA.update();
-    if (registroPWA.waiting) mostrarAtualizacaoPWA(registroPWA.waiting);
+    if (registroPWA.waiting) mostrarAtualizacaoPWA(registroPWA.waiting, !silencioso);
     else if (!silencioso) toast('✓ Você já está na versão mais recente');
   } catch (e) {
     if (!silencioso) toast('⚠️ Não foi possível verificar agora', 'warn');
@@ -169,6 +172,8 @@ function aplicarAtalhoDaURL() {
   const tab = Number(params.get('tab'));
   if (Number.isInteger(tab) && tab >= 0 && tab <= 5 && typeof goTab === 'function') {
     goTab(tab);
+  } else if (typeof goTab === 'function') {
+    goTab(3);
   }
 }
 
