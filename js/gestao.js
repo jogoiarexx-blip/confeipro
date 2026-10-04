@@ -157,7 +157,7 @@ function renderEstoqueResumo() {
 function calcularListaCompras() {
   const necessidade = new Map();
 
-  pedidos.filter(p => !['entregue','cancelado'].includes(p.status || 'orcamento')).forEach(ped => {
+  pedidos.filter(p => ['confirmado','producao','pronto'].includes(p.status || 'orcamento')).forEach(ped => {
     const prod = produtos.find(p => p.id === ped.produtoId);
     if (!prod) return;
     const mult = Math.max(1, parseFloat(ped.quantidade) || 1);
