@@ -118,6 +118,18 @@ function atualizarQtdItemReceita(idx, valor) {
   document.getElementById('resultFinal').style.display = 'none';
 }
 
+function trocarIngredienteItemReceita(idx, ingredienteIdx) {
+  const item = receita[idx];
+  const ing = ingredientes[parseInt(ingredienteIdx, 10)];
+  if (!item || !ing) return;
+  item.nome = ing.nome;
+  item.unidade = ing.unidade;
+  item.custo = arred(custoPorUnidade(ing) * (parseFloat(item.qtd) || 0));
+  salvarReceita();
+  renderReceita();
+  document.getElementById('resultFinal').style.display = 'none';
+}
+
 function renderReceita() {
   const lista    = document.getElementById('listaReceita');
   const totalDiv = document.getElementById('receitaTotal');
@@ -132,6 +144,9 @@ function renderReceita() {
     <div class="recipe-item">
       <div>
         <div class="recipe-name">${escapeHtml(item.nome)}</div>
+        <select class="recipe-inline-select" aria-label="Trocar ingrediente" onchange="trocarIngredienteItemReceita(${i}, this.value)">
+          ${ingredientes.map((ing, idxIng) => `<option value="${idxIng}" ${norm(ing.nome)===norm(item.nome)?'selected':''}>${escapeHtml(ing.nome)}</option>`).join('')}
+        </select>
         <div class="recipe-sub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <input
             type="number"
@@ -192,7 +207,15 @@ function calcularFinal() {
   const custoPorcao = arred(custoTotal / porcoes);
 
   // Preço já calculado pra cobrir a margem desejada MESMO DEPOIS da taxa do cartão/Pix/iFood
-  const vendaPorcao = arred((custoPorcao * (1 + margem / 100)) / (1 - taxaPct / 100));
+  const tipoMargem = document.getElementById('fTipoMargem')?.value || 'markup';
+  let vendaPorcao;
+  if (tipoMargem === 'liquida') {
+    const divisor = 1 - (taxaPct / 100) - (margem / 100);
+    if (divisor <= 0) { toast('⚠️ Margem líquida + taxa precisa ser menor que 100%', 'err'); return; }
+    vendaPorcao = arred(custoPorcao / divisor);
+  } else {
+    vendaPorcao = arred((custoPorcao * (1 + margem / 100)) / (1 - taxaPct / 100));
+  }
   const vendaTotal  = arred(vendaPorcao * porcoes);
   const valorTaxa   = arred(vendaTotal * (taxaPct / 100));
   const lucro       = arred(vendaTotal - custoTotal - valorTaxa);
@@ -459,7 +482,7 @@ function limparReceita() {
 // Antes esses campos ficavam só no HTML, com valor padrão fixo no
 // atributo `value`. Como nada salvava, todo reload jogava tudo de
 // volta pro padrão. Agora fica salvo no localStorage, igual ao resto.
-const CONFIG_RECEITA_IDS = ['xGas', 'xEnergia', 'xEmbalagem', 'xValorHora', 'xHoras', 'xPerda', 'xTaxa', 'fMargem', 'fPorcoes'];
+const CONFIG_RECEITA_IDS = ['xGas', 'xEnergia', 'xEmbalagem', 'xValorHora', 'xHoras', 'xPerda', 'xTaxa', 'fMargem', 'fPorcoes', 'fTipoMargem'];
 
 function salvarConfigReceita() {
   const cfg = {};
@@ -561,4 +584,186 @@ renderReceita = function() {
 document.addEventListener('DOMContentLoaded', function() {
   atualizarContadoresReceitaUI();
   filtrarReceitasProntas();
+});
+
+
+// ═══════════════════════════════════════════════════════════
+// BIBLIOTECA GERENCIÁVEL DE RECEITAS + ESCALA
+// ═══════════════════════════════════════════════════════════
+let receitasGerenciaveis = JSON.parse(localStorage.getItem('cpReceitasGerenciaveis') || '[]');
+let receitaGerenciavelEditandoId = null;
+
+function salvarReceitasGerenciaveis() {
+  localStorage.setItem('cpReceitasGerenciaveis', JSON.stringify(receitasGerenciaveis));
+  if (typeof registrarSnapshotAutomatico === 'function') registrarSnapshotAutomatico();
+}
+
+function nomeReceitaAtualSugerido() {
+  const rend = document.getElementById('rendNome')?.textContent?.trim();
+  return rend && rend !== '—' ? rend.replace(/^[^\p{L}\p{N}]+/u, '') : 'Minha receita';
+}
+
+function novaReceitaGerenciavelDaAtual() {
+  if (!receita.length) { toast('⚠️ Monte ou carregue uma receita primeiro', 'err'); return; }
+  const nome = prompt('Nome da receita salva:', nomeReceitaAtualSugerido());
+  if (!nome || !nome.trim()) return;
+  receitasGerenciaveis.push({
+    id: typeof cpUid === 'function' ? cpUid('rec') : 'rec_' + Date.now(),
+    nome: nome.trim(),
+    itens: JSON.parse(JSON.stringify(receita)),
+    porcoes: parseFloat(document.getElementById('fPorcoes')?.value) || 1,
+    config: CONFIG_RECEITA_IDS.reduce((o,id) => { o[id] = document.getElementById(id)?.value ?? ''; return o; }, {}),
+    criadoEm: new Date().toISOString(),
+    atualizadoEm: new Date().toISOString()
+  });
+  salvarReceitasGerenciaveis();
+  renderReceitasGerenciaveis();
+  atualizarContadoresReceitaUI();
+  toast('✓ Receita salva na biblioteca');
+}
+
+function carregarReceitaGerenciavel(id, editar) {
+  const r = receitasGerenciaveis.find(x => x.id === id);
+  if (!r) return;
+  receita = JSON.parse(JSON.stringify(r.itens || []));
+  salvarReceita();
+  renderReceita();
+  if (r.config) {
+    CONFIG_RECEITA_IDS.forEach(k => {
+      if (r.config[k] !== undefined && document.getElementById(k)) document.getElementById(k).value = r.config[k];
+    });
+  }
+  if (r.porcoes && document.getElementById('fPorcoes')) document.getElementById('fPorcoes').value = r.porcoes;
+  document.getElementById('resultFinal').style.display = 'none';
+  receitaGerenciavelEditandoId = editar ? id : null;
+  const btn = document.getElementById('btnSalvarReceitaEditada');
+  if (btn) btn.style.display = editar ? 'block' : 'none';
+  toggleIngredientesReceita(true);
+  toast(editar ? `✎ Editando "${r.nome}"` : `✓ "${r.nome}" carregada`);
+}
+
+function salvarEdicaoReceitaGerenciavel() {
+  const r = receitasGerenciaveis.find(x => x.id === receitaGerenciavelEditandoId);
+  if (!r) { toast('⚠️ Nenhuma receita da biblioteca em edição', 'err'); return; }
+  r.itens = JSON.parse(JSON.stringify(receita));
+  r.porcoes = parseFloat(document.getElementById('fPorcoes')?.value) || 1;
+  r.config = CONFIG_RECEITA_IDS.reduce((o,id) => { o[id] = document.getElementById(id)?.value ?? ''; return o; }, {});
+  r.atualizadoEm = new Date().toISOString();
+  salvarReceitasGerenciaveis();
+  renderReceitasGerenciaveis();
+  receitaGerenciavelEditandoId = null;
+  const btn = document.getElementById('btnSalvarReceitaEditada');
+  if (btn) btn.style.display = 'none';
+  toast('✓ Alterações da receita salvas');
+}
+
+function renomearReceitaGerenciavel(id, nome) {
+  const r = receitasGerenciaveis.find(x => x.id === id);
+  const novo = String(nome || '').trim();
+  if (!r || !novo) { renderReceitasGerenciaveis(); return; }
+  r.nome = novo;
+  r.atualizadoEm = new Date().toISOString();
+  salvarReceitasGerenciaveis();
+  renderReceitasGerenciaveis();
+}
+
+function duplicarReceitaGerenciavel(id) {
+  const r = receitasGerenciaveis.find(x => x.id === id);
+  if (!r) return;
+  const copia = JSON.parse(JSON.stringify(r));
+  copia.id = typeof cpUid === 'function' ? cpUid('rec') : 'rec_' + Date.now();
+  copia.nome = r.nome + ' (cópia)';
+  copia.criadoEm = new Date().toISOString();
+  receitasGerenciaveis.push(copia);
+  salvarReceitasGerenciaveis();
+  renderReceitasGerenciaveis();
+  toast('✓ Receita duplicada');
+}
+
+function excluirReceitaGerenciavel(id) {
+  const i = receitasGerenciaveis.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const r = receitasGerenciaveis[i];
+  receitasGerenciaveis.splice(i,1);
+  salvarReceitasGerenciaveis();
+  renderReceitasGerenciaveis();
+  atualizarContadoresReceitaUI();
+  toast(`✓ "${r.nome}" removida`, null, () => {
+    receitasGerenciaveis.splice(i,0,r);
+    salvarReceitasGerenciaveis();
+    renderReceitasGerenciaveis();
+    atualizarContadoresReceitaUI();
+  });
+}
+
+function renderReceitasGerenciaveis() {
+  const el = document.getElementById('listaReceitasGerenciaveis');
+  if (!el) return;
+  if (!receitasGerenciaveis.length) {
+    el.innerHTML = '<div class="empty-state compact-empty">💾 Salve a receita atual para criar sua biblioteca editável.</div>';
+    return;
+  }
+  el.innerHTML = receitasGerenciaveis.map(r => `
+    <div class="managed-recipe-card">
+      <input class="managed-recipe-name" value="${escapeHtml(r.nome)}" onchange="renomearReceitaGerenciavel('${r.id}', this.value)" aria-label="Nome da receita">
+      <div class="managed-recipe-meta">${(r.itens||[]).length} ingrediente(s) · ${r.porcoes||1} porção(ões)</div>
+      <div class="mini-actions">
+        <button class="btn btn-primary" onclick="carregarReceitaGerenciavel('${r.id}', false)">Carregar</button>
+        <button class="btn btn-outline" onclick="carregarReceitaGerenciavel('${r.id}', true)">✎ Editar</button>
+        <button class="btn btn-outline" onclick="duplicarReceitaGerenciavel('${r.id}')">⧉</button>
+        <button class="btn btn-red" onclick="excluirReceitaGerenciavel('${r.id}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function atualizarCustosReceitaAtual() {
+  if (!receita.length) return;
+  const antes = arred(receita.reduce((s,i) => s + (parseFloat(i.custo)||0),0));
+  let n = 0;
+  receita.forEach(item => {
+    const ing = buscarIngrediente(item.nome);
+    if (!ing) return;
+    const novo = arred(custoPorUnidade(ing) * (parseFloat(item.qtd)||0));
+    if (novo !== item.custo) n++;
+    item.nome = ing.nome;
+    item.unidade = ing.unidade;
+    item.custo = novo;
+  });
+  salvarReceita();
+  renderReceita();
+  const depois = arred(receita.reduce((s,i) => s + (parseFloat(i.custo)||0),0));
+  document.getElementById('resultFinal').style.display = 'none';
+  toast(`✓ ${n} custo(s) atualizado(s): ${fmt(antes)} → ${fmt(depois)}`);
+}
+
+function escalarReceita(fator) {
+  fator = parseFloat(fator);
+  if (!receita.length || !isFinite(fator) || fator <= 0) return;
+  receita = receita.map(i => ({
+    ...i,
+    qtd: Math.round((parseFloat(i.qtd)||0) * fator * 100) / 100,
+    custo: arred((parseFloat(i.custo)||0) * fator)
+  }));
+  const p = document.getElementById('fPorcoes');
+  if (p && parseFloat(p.value) > 0) p.value = Math.max(1, Math.round(parseFloat(p.value) * fator));
+  salvarReceita();
+  renderReceita();
+  document.getElementById('resultFinal').style.display = 'none';
+  toast(`✓ Receita ajustada para ${String(fator).replace('.',',')}×`);
+}
+
+function escalarReceitaParaPorcoes() {
+  const atual = parseFloat(document.getElementById('fPorcoes')?.value);
+  const alvo = parseFloat(document.getElementById('escalaPorcoesAlvo')?.value);
+  if (!receita.length || !isFinite(atual) || atual <= 0 || !isFinite(alvo) || alvo <= 0) {
+    toast('⚠️ Informe o rendimento atual e o rendimento desejado', 'err'); return;
+  }
+  const fator = alvo / atual;
+  escalarReceita(fator);
+  document.getElementById('fPorcoes').value = Math.round(alvo);
+  salvarConfigReceita();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  renderReceitasGerenciaveis();
 });
