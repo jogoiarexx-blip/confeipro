@@ -79,6 +79,7 @@
     <header class="mobile-topbar">
       <button class="hamburger" onclick="abrirSidebar()" aria-label="Abrir menu">☰</button>
       <div class="mobile-logo" id="mobileLogo"></div>
+      <span class="network-status online" id="networkStatus">● Online</span>
     </header>
 
 <div class="page active" id="tab0">
@@ -392,7 +393,7 @@
   <div class="card">
     <div class="card-title"><span class="dot"></span><span id="pedidoFormTitulo">Novo pedido</span></div>
     <label>Cliente</label>
-    <input id="pCliente" list="listaClientesPedido" placeholder="Nome do cliente" autocomplete="off">
+    <input id="pCliente" list="listaClientesPedido" placeholder="Nome do cliente" autocomplete="name" enterkeyhint="next">
     <datalist id="listaClientesPedido"></datalist>
     <label>Produto</label>
     <input id="pProduto" list="listaProdutosPedido" placeholder="Ex: Bolo Nuvem" oninput="preencherPedidoPorProduto()" autocomplete="off">
@@ -472,6 +473,26 @@
     <div class="dash-card"><div class="dash-label">📈 Margem real</div><div class="dash-value" id="dMargemReal">0%</div></div>
     <div class="dash-card"><div class="dash-label">🏆 Mais vendido</div><div class="dash-value dash-value-text" id="dMaisVendido">—</div></div>
     <div class="dash-card"><div class="dash-label">💎 Mais lucrativo</div><div class="dash-value dash-value-text" id="dMaisLucrativo">—</div></div>
+  </div>
+
+  <div class="card mobile-quick-card">
+    <div class="card-title"><span class="dot"></span>Ações rápidas</div>
+    <div class="quick-actions-grid">
+      <button class="btn btn-primary" onclick="goTab(2);setTimeout(()=>document.getElementById('pCliente')?.focus(),100)">📋 Novo pedido</button>
+      <button class="btn btn-outline" onclick="goTab(0);setTimeout(()=>document.getElementById('rSelect')?.focus(),100)">🧾 Nova receita</button>
+      <button class="btn btn-outline" onclick="goTab(5);setTimeout(()=>document.getElementById('cNome')?.focus(),100)">👤 Novo cliente</button>
+      <button class="btn btn-outline" onclick="goTab(1);setTimeout(()=>document.getElementById('listaCompras')?.scrollIntoView({behavior:'smooth'}),100)">🛒 Lista de compras</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Aplicativo instalado</div>
+    <div class="app-status-grid">
+      <div><span>Versão</span><strong id="pwaVersionInfo">—</strong></div>
+      <div><span>Modo</span><strong id="pwaInstallMode">—</strong></div>
+    </div>
+    <button class="btn btn-outline" id="checkUpdateBtn" onclick="verificarAtualizacaoPWA(false)">🔄 Verificar atualização</button>
+    <span class="hint">Quando existir uma versão nova, o ConfeiPro avisa e permite atualizar sem apagar seus dados.</span>
   </div>
 
   <div class="card">
@@ -711,8 +732,8 @@
 <div class="page" id="tab5">
   <div class="card">
     <div class="card-title"><span class="dot"></span><span id="clienteFormTitulo">Novo cliente</span></div>
-    <label>Nome</label><input id="cNome" placeholder="Nome do cliente">
-    <label>Telefone / WhatsApp</label><input id="cTelefone" type="tel" placeholder="(16) 99999-9999">
+    <label>Nome</label><input id="cNome" autocomplete="name" enterkeyhint="next" placeholder="Nome do cliente">
+    <label>Telefone / WhatsApp</label><input id="cTelefone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(16) 99999-9999">
     <label>Observações</label><input id="cObs" placeholder="Preferências, endereço, observações...">
     <button class="btn btn-primary" id="cBtnSalvar" onclick="salvarCliente()">+ Salvar cliente</button>
     <button class="btn btn-outline" id="cBtnCancelar" onclick="limparFormCliente()" style="display:none;">✕ Cancelar edição</button>
@@ -726,6 +747,28 @@
 
   </div><!-- /main-content -->
 </div><!-- /app-shell -->
+
+<!-- AVISO DE ATUALIZAÇÃO DO PWA -->
+<div class="pwa-update-bar" id="pwaUpdateBar" hidden role="status" aria-live="polite">
+  <div class="pwa-update-copy">
+    <strong>🆕 Nova versão disponível</strong>
+    <span>Atualize agora sem perder seus dados.</span>
+  </div>
+  <div class="pwa-update-actions">
+    <button type="button" class="btn btn-primary" id="pwaUpdateBtn" onclick="aplicarAtualizacaoPWA()">Atualizar agora</button>
+    <button type="button" class="pwa-update-later" onclick="ocultarAtualizacaoPWA()">Depois</button>
+  </div>
+</div>
+
+<button class="mobile-fab" id="mobileFab" type="button" onclick="acaoFabMobile()" aria-label="Nova ação">＋</button>
+
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Navegação principal">
+  <button class="mobile-nav-item" data-mobile-tab="3" onclick="goTab(3)"><span>🏠</span><small>Início</small></button>
+  <button class="mobile-nav-item active" data-mobile-tab="0" onclick="goTab(0)"><span>🧾</span><small>Receitas</small></button>
+  <button class="mobile-nav-item" data-mobile-tab="2" onclick="goTab(2)"><span>📋</span><small>Pedidos</small></button>
+  <button class="mobile-nav-item" data-mobile-tab="4" onclick="goTab(4)"><span>🎂</span><small>Produtos</small></button>
+  <button class="mobile-nav-item" onclick="abrirMaisMobile()"><span>☰</span><small>Mais</small></button>
+</nav>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -760,17 +803,5 @@
 <script src="js/produtos.js"></script>
 <script src="js/gestao.js"></script>
 <script src="js/app.js"></script>
-
-<!-- Registro do Service Worker (PWA instalável + offline).
-     Caminho relativo — funciona tanto na raiz quanto em subpasta
-     de projeto do GitHub Pages (ex: usuario.github.io/confeipro/). -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('service-worker.js')
-      .catch(function (err) { console.warn('SW não registrado:', err); });
-  });
-}
-</script>
 </body>
 </html>
