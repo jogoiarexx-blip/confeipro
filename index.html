@@ -57,6 +57,7 @@
       <div class="nav-item" data-tab="1" onclick="goTab(1)"><span class="nav-icon">🥣</span><span class="nav-label">Ingredientes</span></div>
       <div class="nav-item" data-tab="0" onclick="goTab(0)"><span class="nav-icon">🧾</span><span class="nav-label">Receitas</span></div>
       <div class="nav-item" data-tab="2" onclick="goTab(2)"><span class="nav-icon">📋</span><span class="nav-label">Pedidos</span></div>
+      <div class="nav-item" data-tab="5" onclick="goTab(5)"><span class="nav-icon">👥</span><span class="nav-label">Clientes</span></div>
     </nav>
 
     <div class="sidebar-footer">
@@ -93,6 +94,12 @@
         <span class="recipe-search-icon">🔎</span>
         <input id="pesquisaReceita" type="search" placeholder="Pesquisar receita..." oninput="filtrarReceitasProntas()" autocomplete="off">
       </div>
+      <div class="managed-recipe-tools">
+        <button class="btn btn-outline" type="button" onclick="novaReceitaGerenciavelDaAtual()">💾 Salvar receita atual na biblioteca</button>
+        <button class="btn btn-outline" type="button" id="btnSalvarReceitaEditada" onclick="salvarEdicaoReceitaGerenciavel()" style="display:none;">✓ Salvar alterações da receita</button>
+      </div>
+      <div id="listaReceitasGerenciaveis"></div>
+      <div class="section-divider">📚 Modelos originais</div>
       <div id="listaReceitasProntas">
         <button class="btn btn-preset receita-preset" data-recipe-name="recheio chocolate chocolate" onclick="carregarReceita('chocolate')">🍫 Carregar receita chocolate</button>
         <button class="btn btn-preset receita-preset" data-recipe-name="recheio coco coco" onclick="carregarReceita('coco')">🥥 Carregar receita coco</button>
@@ -206,7 +213,12 @@
   <div class="card">
     <div class="card-title"><span class="dot"></span>Preço de venda</div>
 
-    <label>Margem de lucro (%)</label>
+    <label>Forma de precificação</label>
+    <select id="fTipoMargem">
+      <option value="markup">Markup sobre o custo</option>
+      <option value="liquida">Margem líquida sobre a venda</option>
+    </select>
+    <label>Margem / markup (%)</label>
     <input id="fMargem" type="number" placeholder="Ex: 50" step="1" min="0">
     <span class="hint">💡 Quanto você quer ganhar em cima do custo. 50 = o preço de venda fica 50% acima do custo.</span>
 
@@ -259,6 +271,18 @@
       </div>
     </div>
 
+    <div class="section-divider" style="margin-top:18px;">⚖️ Escalar receita</div>
+    <div class="scale-grid">
+      <button class="btn btn-outline" onclick="escalarReceita(0.5)">½×</button>
+      <button class="btn btn-outline" onclick="escalarReceita(1.5)">1,5×</button>
+      <button class="btn btn-outline" onclick="escalarReceita(2)">2×</button>
+      <button class="btn btn-outline" onclick="escalarReceita(3)">3×</button>
+    </div>
+    <div class="row">
+      <input id="escalaPorcoesAlvo" type="number" min="1" step="1" placeholder="Quero render... ex: 30">
+      <button class="btn btn-outline" onclick="escalarReceitaParaPorcoes()">Ajustar rendimento</button>
+    </div>
+    <button class="btn btn-outline" onclick="atualizarCustosReceitaAtual()">🔄 Atualizar pelos preços atuais</button>
     <button class="btn btn-red" onclick="limparReceita()" style="margin-top:12px;">🗑 Limpar receita</button>
   </div>
 
@@ -318,6 +342,16 @@
       <option value="L">L — litros</option>
     </select>
     <span class="hint">📏 Cadastrar em kg ou L é só conveniência (comprou o pacote de 1kg? digite 1kg) — o app converte automaticamente para g/ml ao salvar, pra manter tudo na mesma unidade nas receitas.</span>
+    <div class="row">
+      <div>
+        <label>Estoque atual</label>
+        <input id="iEstoque" type="number" min="0" step="0.01" placeholder="Ex: 1200">
+      </div>
+      <div>
+        <label>Estoque mínimo</label>
+        <input id="iEstoqueMin" type="number" min="0" step="0.01" placeholder="Ex: 300">
+      </div>
+    </div>
 
     <button class="btn btn-primary" id="iBtnSalvar" onclick="salvarIngrediente()">+ Adicionar ingrediente</button>
     <button class="btn btn-outline" id="iBtnCancelar" onclick="cancelarEdicaoIngrediente()" style="display:none;">✕ Cancelar edição</button>
@@ -341,6 +375,13 @@
     <div id="listaIngredientes"><div class="empty-state">🧂 Nenhum ingrediente ainda.<br>Cadastre o primeiro ali em cima!</div></div>
   </div>
 
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--amber)"></span>Estoque baixo <span class="section-count" id="qtdEstoqueBaixo">0</span></div>
+    <div id="estoqueResumo"></div>
+    <div class="section-divider">🛒 Lista de compras</div>
+    <button class="btn btn-outline" onclick="gerarListaCompras()">🔄 Recalcular lista</button>
+    <div id="listaCompras"></div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════
@@ -349,21 +390,32 @@
 <div class="page" id="tab2">
 
   <div class="card">
-    <div class="card-title"><span class="dot"></span>Novo pedido</div>
-
+    <div class="card-title"><span class="dot"></span><span id="pedidoFormTitulo">Novo pedido</span></div>
     <label>Cliente</label>
-    <input id="pCliente" placeholder="Nome do cliente">
-
+    <input id="pCliente" list="listaClientesPedido" placeholder="Nome do cliente" autocomplete="off">
+    <datalist id="listaClientesPedido"></datalist>
     <label>Produto</label>
-    <input id="pProduto" placeholder="Ex: Bolo de chocolate">
-
-    <label>Valor de venda (R$)</label>
+    <input id="pProduto" list="listaProdutosPedido" placeholder="Ex: Bolo Nuvem" oninput="preencherPedidoPorProduto()" autocomplete="off">
+    <datalist id="listaProdutosPedido"></datalist>
     <div class="row">
-      <input id="pValor" type="number" placeholder="Ex: 45.00" step="0.01" min="0">
-      <button class="btn btn-outline" style="margin-top:0;" onclick="preencherValorDaReceita()">↙ Usar preço da receita</button>
+      <div><label>Quantidade</label><input id="pQuantidade" type="number" value="1" min="1" step="1" oninput="preencherPedidoPorProduto()"></div>
+      <div><label>Valor total (R$)</label><input id="pValor" type="number" placeholder="Ex: 45.00" step="0.01" min="0"></div>
     </div>
-
-    <button class="btn btn-primary" onclick="addPedido()">+ Adicionar pedido</button>
+    <div class="row">
+      <div><label>Data do pedido</label><input id="pDataPedido" type="date"></div>
+      <div><label>Data de entrega</label><input id="pDataEntrega" type="date"></div>
+    </div>
+    <div class="row">
+      <div><label>Sinal recebido (R$)</label><input id="pSinal" type="number" value="0" min="0" step="0.01"></div>
+      <div><label>Pagamento</label><select id="pPagamento"><option value="">Não informado</option><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select></div>
+    </div>
+    <label>Status</label>
+    <select id="pStatus"><option value="orcamento">Orçamento</option><option value="confirmado">Confirmado</option><option value="producao">Em produção</option><option value="pronto">Pronto</option><option value="entregue">Entregue</option><option value="cancelado">Cancelado</option></select>
+    <div class="row">
+      <button class="btn btn-outline" onclick="preencherValorDaReceita()">↙ Usar preço da receita</button>
+      <button class="btn btn-primary" id="pBtnSalvar" onclick="addPedido()">+ Salvar pedido</button>
+    </div>
+    <button class="btn btn-outline" id="pBtnCancelar" onclick="cancelarEdicaoPedido()" style="display:none;">✕ Cancelar edição</button>
   </div>
 
   <div class="card">
@@ -413,11 +465,18 @@
       <div class="dash-label">💎 Ticket médio</div>
       <div class="dash-value" id="dTicket" style="color:var(--accent2)">R$ 0</div>
     </div>
+    <div class="dash-card"><div class="dash-label">📉 Custos estimados</div><div class="dash-value" id="dCustos">R$ 0</div></div>
+    <div class="dash-card"><div class="dash-label">💚 Lucro estimado</div><div class="dash-value" id="dLucro" style="color:var(--green)">R$ 0</div></div>
+    <div class="dash-card"><div class="dash-label">📅 Faturado no mês</div><div class="dash-value" id="dMes">R$ 0</div></div>
+    <div class="dash-card"><div class="dash-label">🏆 Mais vendido</div><div class="dash-value dash-value-text" id="dMaisVendido">—</div></div>
   </div>
 
   <div class="card">
     <div class="card-title"><span class="dot" style="background:var(--green)"></span>Backup de dados</div>
+    <div class="backup-status" id="backupStatus"></div>
     <button class="btn btn-green" onclick="exportarDados()">⬆️ Exportar dados (JSON)</button>
+    <button class="btn btn-outline" onclick="registrarSnapshotAutomatico(true)">💾 Criar cópia local agora</button>
+    <button class="btn btn-outline" onclick="restaurarUltimoBackupAutomatico()">🕘 Restaurar última cópia local</button>
     <label style="margin-top:12px;">Importar backup</label>
     <input type="file" id="importFile" accept=".json" style="padding:8px;">
     <button class="btn btn-outline" onclick="importarDados()">⬇️ Importar dados (JSON)</button>
@@ -567,7 +626,12 @@
     <label>💳 Taxa do cartão, Pix ou iFood (%)</label>
     <input id="pdTaxa" type="number" placeholder="Ex: 5" step="0.1" min="0" max="95" value="5">
 
-    <label>Margem de lucro (%)</label>
+    <label>Forma de precificação</label>
+    <select id="pdTipoMargem" onchange="autoCalcularProduto()">
+      <option value="markup">Markup sobre o custo</option>
+      <option value="liquida">Margem líquida sobre a venda</option>
+    </select>
+    <label>Margem / markup (%)</label>
     <input id="pdMargem" type="number" placeholder="Ex: 50" step="1" min="0" value="50">
 
     <button class="btn btn-outline" onclick="calcularProduto()">✓ Calcular custo e preço</button>
@@ -637,6 +701,26 @@
 
 </div>
 
+
+<!-- ══════════════════════════════════════════════
+     TAB 5 — CLIENTES
+══════════════════════════════════════════════ -->
+<div class="page" id="tab5">
+  <div class="card">
+    <div class="card-title"><span class="dot"></span><span id="clienteFormTitulo">Novo cliente</span></div>
+    <label>Nome</label><input id="cNome" placeholder="Nome do cliente">
+    <label>Telefone / WhatsApp</label><input id="cTelefone" type="tel" placeholder="(16) 99999-9999">
+    <label>Observações</label><input id="cObs" placeholder="Preferências, endereço, observações...">
+    <button class="btn btn-primary" id="cBtnSalvar" onclick="salvarCliente()">+ Salvar cliente</button>
+    <button class="btn btn-outline" id="cBtnCancelar" onclick="limparFormCliente()" style="display:none;">✕ Cancelar edição</button>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Clientes cadastrados</div>
+    <input id="cBusca" type="search" placeholder="Pesquisar cliente..." oninput="renderClientes()">
+    <div id="listaClientes"></div>
+  </div>
+</div>
+
   </div><!-- /main-content -->
 </div><!-- /app-shell -->
 
@@ -671,6 +755,7 @@
 <script src="js/receita.js"></script>
 <script src="js/pedidos.js"></script>
 <script src="js/produtos.js"></script>
+<script src="js/gestao.js"></script>
 <script src="js/app.js"></script>
 
 <!-- Registro do Service Worker (PWA instalável + offline).
