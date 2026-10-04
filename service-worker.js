@@ -35,9 +35,15 @@ const ARQUIVOS_PARA_CACHE = [
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ARQUIVOS_PARA_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then(function(cache) { return cache.addAll(ARQUIVOS_PARA_CACHE); })
+      .then(function() { return caches.keys(); })
+      .then(function(nomes) {
+        // Ponte única v2.0 -> v2.1: acelera a adoção por quem já tem a
+        // versão anterior instalada. Nas próximas versões, o app v2.1
+        // já mostrará o botão "Atualizar agora".
+        if (nomes.includes('confeipro-v20')) return self.skipWaiting();
+      })
   );
 });
 
