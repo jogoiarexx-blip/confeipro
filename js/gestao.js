@@ -157,10 +157,11 @@ function renderEstoqueResumo() {
 function calcularListaCompras() {
   const necessidade = new Map();
 
-  pedidos.filter(p => ['confirmado','producao','pronto'].includes(p.status || 'orcamento')).forEach(ped => {
+  pedidos.filter(p => !p.estoqueBaixado && ['confirmado','producao','pronto'].includes(p.status || 'orcamento')).forEach(ped => {
     const prod = produtos.find(p => p.id === ped.produtoId);
     if (!prod) return;
-    const mult = Math.max(1, parseFloat(ped.quantidade) || 1);
+    // O pedido vende porções; os ingredientes descrevem a receita inteira.
+    const mult = Math.max(1, parseFloat(ped.quantidade) || 1) / Math.max(1, parseFloat(prod.rendimento) || 1);
     itensProdutoTodos(prod).forEach(item => {
       const chave = norm(item.nome);
       necessidade.set(chave, (necessidade.get(chave) || 0) + (parseFloat(item.qtd) || 0) * mult);
@@ -198,7 +199,8 @@ function baixarEstoquePedido(id) {
   const prod = produtos.find(p => p.id === ped.produtoId);
   if (!prod) { toast('⚠️ Vincule este pedido a um produto cadastrado', 'err'); return; }
 
-  const mult = Math.max(1, parseFloat(ped.quantidade) || 1);
+  // O pedido vende porções; os ingredientes descrevem a receita inteira.
+    const mult = Math.max(1, parseFloat(ped.quantidade) || 1) / Math.max(1, parseFloat(prod.rendimento) || 1);
   itensProdutoTodos(prod).forEach(item => {
     const ing = ingredientes.find(i => norm(i.nome) === norm(item.nome));
     if (!ing) return;

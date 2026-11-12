@@ -169,7 +169,8 @@ document.addEventListener('visibilitychange', function() {
 
 function aplicarAtalhoDaURL() {
   const params = new URLSearchParams(window.location.search);
-  const tab = Number(params.get('tab'));
+  const valor = params.get('tab');
+  const tab = valor !== null && /^[0-5]$/.test(valor) ? Number(valor) : 3;
   if (Number.isInteger(tab) && tab >= 0 && tab <= 5 && typeof goTab === 'function') {
     goTab(tab);
   } else if (typeof goTab === 'function') {

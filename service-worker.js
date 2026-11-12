@@ -1,10 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
-// CONFEIPRO PWA — Service Worker v21
-// Navegação: network-first com fallback offline.
-// Assets: cache imediato + atualização em segundo plano.
+// CONFEIPRO PWA — Service Worker v22
+// HTML e assets: conjunto consistente por versão, disponível offline.
 // Atualização: o app mostra "Atualizar agora" e envia SKIP_WAITING.
 // ═══════════════════════════════════════════════════════════════
-const CACHE_NAME = 'confeipro-v21';
+const CACHE_NAME = 'confeipro-v22';
 const OFFLINE_URL = './index.html';
 
 const ARQUIVOS_PARA_CACHE = [
@@ -34,17 +33,8 @@ const ARQUIVOS_PARA_CACHE = [
 ];
 
 self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) { return cache.addAll(ARQUIVOS_PARA_CACHE); })
-      .then(function() { return caches.keys(); })
-      .then(function(nomes) {
-        // Ponte única v2.0 -> v2.1: acelera a adoção por quem já tem a
-        // versão anterior instalada. Nas próximas versões, o app v2.1
-        // já mostrará o botão "Atualizar agora".
-        if (nomes.includes('confeipro-v20')) return self.skipWaiting();
-      })
-  );
+  // Uma versão só fica disponível depois de baixar o conjunto inteiro.
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ARQUIVOS_PARA_CACHE)));
 });
 
 self.addEventListener('message', function(event) {
@@ -67,48 +57,22 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-function respostaOfflineNavegacao() {
-  return caches.match(OFFLINE_URL).then(function(r) {
-    return r || caches.match('./');
-  });
-}
-
 self.addEventListener('fetch', function(event) {
   const req = event.request;
   if (req.method !== 'GET') return;
-
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  const base = new URL('./', self.location.href);
+  const navegacao = req.mode === 'navigate' &&
+    (url.pathname === base.pathname || url.pathname === new URL(OFFLINE_URL, base).pathname);
+  const arquivo = ARQUIVOS_PARA_CACHE.some(path => new URL(path, base).pathname === url.pathname);
+  if (!navegacao && !arquivo) return;
 
-  // HTML/navegação deve preferir a rede para o usuário receber a interface nova
-  // assim que estiver online. Sem internet, cai para a cópia instalada.
-  if (req.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
-    event.respondWith(
-      fetch(req, { cache: 'no-store' })
-        .then(function(res) {
-          if (res && res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(function(cache) { cache.put(OFFLINE_URL, clone); });
-          }
-          return res;
-        })
-        .catch(respostaOfflineNavegacao)
-    );
-    return;
-  }
-
-  // Assets: resposta rápida do cache, mas atualiza silenciosamente pela rede.
-  event.respondWith(
-    caches.match(req).then(function(cacheHit) {
-      const rede = fetch(req).then(function(res) {
-        if (res && res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(function(cache) { cache.put(req, clone); });
-        }
-        return res;
-      }).catch(function() { return cacheHit; });
-
-      return cacheHit || rede;
-    })
-  );
+  // HTML e scripts da MESMA versão: a atualização é ativada pelo usuário.
+  // Não misturar HTML novo da rede com scripts antigos do cache.
+  event.respondWith(caches.open(CACHE_NAME).then(async function(cache) {
+    const chave = navegacao ? OFFLINE_URL : new URL(url.pathname, url.origin).href;
+    const salvo = await cache.match(chave);
+    return salvo || fetch(req);
+  }));
 });

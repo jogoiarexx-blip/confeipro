@@ -1307,3 +1307,49 @@ select option { background: var(--surface2); }
   font-weight: 800;
   line-height: 1.35;
 }
+
+/* v2.2 — teclado, celulares estreitos, notebooks e orientação horizontal */
+.nav-item { width: 100%; border: 0; background: transparent; font-family: inherit; text-align: left; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 1600; background: var(--surface); color: var(--text); padding: 12px; border: 2px solid var(--accent); border-radius: 8px; }
+.skip-link:focus { top: 10px; }
+.modal-overlay { z-index: 1500; overflow-y: auto; }
+.modal-box { max-height: calc(100dvh - 40px); overflow-y: auto; }
+.modal-message { white-space: pre-line; overflow-wrap: anywhere; }
+body.modal-open, body.drawer-open { overflow: hidden; }
+input, select, textarea { min-width: 0; max-width: 100%; }
+.card, .pedido-card, .produto-card, .cliente-main, .stock-row { overflow-wrap: anywhere; }
+.pedido-card-head > div, .produto-info { min-width: 0; }
+.stock-row { flex-wrap: wrap; }
+.stock-alert, .stock-buy { white-space: normal; }
+.sidebar-close, .modal-close, .hamburger { min-width: 44px; min-height: 44px; }
+@media (min-width: 901px) {
+  .page { max-width: 1080px; padding: 28px; }
+  #tab2.active, #tab5.active { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 18px; align-items: start; }
+  #tab2 > .card, #tab5 > .card { min-width: 0; }
+  .sidebar { width: 220px; }
+  .main-content { margin-left: 220px; }
+}
+@media (max-width: 900px) {
+  input, select, textarea { font-size: 16px; }
+  .page { padding-bottom: 88px; }
+  .sidebar { z-index: 1100; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .sidebar-overlay { z-index: 1090; }
+  .sidebar-header { justify-content: space-between; }
+  .sidebar-header .logo-wrap { display: block; }
+  .pwa-update-bar.show + .mobile-fab { visibility: hidden; }
+  .modal-overlay { padding-top: max(14px, env(safe-area-inset-top)); }
+}
+@media (max-width: 380px) {
+  .row { flex-wrap: wrap; }
+  .pedido-card-head, .produto-header { flex-wrap: wrap; }
+  .pwa-update-actions { flex-wrap: wrap; }
+  .card { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+.row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.row > div { min-width: 0; }
+input[type="date"] { width: 100%; }
+@media (max-width: 380px) { .row { grid-template-columns: 1fr; } }

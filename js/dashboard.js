@@ -104,8 +104,8 @@ function validarIngredientesBackup(lista) {
     validos.push({
       ...ing,
       nome, precoTotal, qtdTotal: norm.qtd, unidade: norm.unidade,
-      estoqueQtd: Math.max(0, parseFloat(ing?.estoqueQtd)||0),
-      estoqueMin: Math.max(0, parseFloat(ing?.estoqueMin)||0),
+      estoqueQtd: normalizarUnidade(Math.max(0, parseFloat(ing?.estoqueQtd)||0), unidade).qtd,
+      estoqueMin: normalizarUnidade(Math.max(0, parseFloat(ing?.estoqueMin)||0), unidade).qtd,
       historicoPrecos: Array.isArray(ing?.historicoPrecos) ? ing.historicoPrecos : []
     });
   });
