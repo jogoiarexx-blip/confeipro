@@ -183,6 +183,33 @@ function alterarStatusPedido(id, status) {
   if (typeof gerarListaCompras === 'function') gerarListaCompras();
 }
 
+// Recebimentos adicionais são mantidos no próprio pedido; o campo sinal
+// continua representando o total recebido para compatibilidade com relatórios.
+function registrarRecebimentoPedido(id) {
+  const p = pedidos.find(x => x.id === id);
+  if (!p || ['cancelado','orcamento'].includes(p.status)) {
+    toast('Confirme o pedido antes de registrar pagamentos', 'warn'); return;
+  }
+  const saldo = Math.max(0, arred((Number(p.valor)||0)-(Number(p.sinal)||0)));
+  if (saldo <= 0) { toast('Pedido já está quitado'); return; }
+  const entrada = window.prompt('Valor recebido agora (R$). Saldo: '+fmt(saldo));
+  if (entrada === null) return;
+  const valor = Number(entrada.trim().replace(',','.'));
+  if (!Number.isFinite(valor) || valor <= 0 || valor > saldo) {
+    toast('Informe um valor maior que zero e até '+fmt(saldo), 'warn'); return;
+  }
+  const novo = arred((Number(p.sinal)||0)+valor);
+  const historico = Array.isArray(p.recebimentos) ? p.recebimentos.slice() : [];
+  historico.push({id:cpUid('rec'),valor:arred(valor),data:new Date().toISOString(),metodo:p.pagamento||''});
+  p.recebimentos = historico;
+  p.sinal = novo;
+  p.atualizadoEm = new Date().toISOString();
+  salvarPedidos();
+  renderPedidos();
+  atualizarDashboard();
+  toast('✓ Recebimento registrado: '+fmt(valor));
+}
+
 function formatarDataCurta(valor) {
   if (!valor) return '—';
   const [a,m,d] = String(valor).split('-');
@@ -246,6 +273,8 @@ function renderPedidos() {
           <button class="btn btn-outline" onclick="editarPedido('${p.id}')">✎ Editar</button>
           ${p.produtoId && !p.estoqueBaixado ? `<button class="btn btn-outline" onclick="baixarEstoquePedido('${p.id}')">📦 Baixar estoque</button>` : ''}
           ${p.estoqueBaixado ? '<span class="stock-done">✓ estoque baixado</span>' : ''}
+          ${!['cancelado','orcamento'].includes(p.status) && saldo > 0 ? `<button class="btn btn-outline" onclick="registrarRecebimentoPedido('${p.id}')">💵 Receber</button>` : ''}
+          ${Array.isArray(p.recebimentos) && p.recebimentos.length ? `<span class="cp241-paid">🧾 ${p.recebimentos.length} recebimento(s) adicional(is)</span>` : ''}
           <button class="btn btn-red" onclick="delPedidoPorId('${p.id}')">🗑</button>
         </div>
       </div>`;
