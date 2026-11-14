@@ -66,3 +66,31 @@ test('worker entrega HTML e scripts da mesma versão, sem buscar nova cópia na 
   }
   assert.equal(rede,0);
 });
+
+
+test('V2.5: orçamento e pedido cancelado não compõem o financeiro', () => {
+  const c=contexto(['js/utils.js','js/dashboard.js']);
+  const resumo=c.calcularResumoFinanceiro([
+    {status:'orcamento',valor:1000,sinal:500},
+    {status:'cancelado',valor:999,sinal:999},
+    {status:'confirmado',valor:200,sinal:50},
+    {status:'entregue',valor:150,sinal:150}
+  ]);
+  assert.equal(resumo.vendido,350);
+  assert.equal(resumo.recebido,200);
+  assert.equal(resumo.receber,150);
+  assert.equal(resumo.quitados,1);
+  assert.equal(resumo.quantidade,2);
+});
+test('V2.5: pagamentos excedentes e valores inconsistentes não geram recebimento maior que venda', () => {
+  const c=contexto(['js/utils.js','js/dashboard.js']);
+  const resumo=c.calcularResumoFinanceiro([
+    {status:'confirmado',valor:50,sinal:100},
+    {status:'producao',valor:25,sinal:-10},
+    {status:'pronto',valor:0,sinal:20}
+  ]);
+  assert.equal(resumo.vendido,75);
+  assert.equal(resumo.recebido,50);
+  assert.equal(resumo.receber,25);
+  assert.equal(resumo.quitados,1);
+});
