@@ -38,6 +38,23 @@ function atualizarDashboard() {
     }
   }
 
+  // Alertas operacionais: não contabilizam orçamentos como vendas.
+  const avisos = document.getElementById('cp23Alerts');
+  if (avisos) {
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const pendentes = pedidos.filter(p => !['entregue','cancelado','orcamento'].includes(p.status));
+    const atrasados = pendentes.filter(p => p.dataEntrega && new Date(p.dataEntrega+'T12:00:00') < hoje);
+    const hojeISO = [hoje.getFullYear(),String(hoje.getMonth()+1).padStart(2,'0'),String(hoje.getDate()).padStart(2,'0')].join('-');
+    const entregasHoje = pendentes.filter(p => p.dataEntrega === hojeISO);
+    const baixo = ingredientes.filter(i => Number(i.estoqueMin)>0 && Number(i.estoqueQtd)<=Number(i.estoqueMin));
+    const linhas = [];
+    if (atrasados.length) linhas.push('⚠️ '+atrasados.length+' encomenda(s) atrasada(s)');
+    if (entregasHoje.length) linhas.push('📦 '+entregasHoje.length+' entrega(s) para hoje');
+    if (baixo.length) linhas.push('🧂 '+baixo.length+' ingrediente(s) com estoque baixo');
+    avisos.replaceChildren();
+    if (!linhas.length) avisos.textContent = '✓ Nenhum alerta urgente registrado.';
+    else linhas.forEach(t => { const p=document.createElement('p');p.textContent=t;avisos.appendChild(p); });
+  }
   document.getElementById('dFaturado').textContent = fmt(total);
   document.getElementById('dPedidos').textContent = validos.length;
   document.getElementById('dIngredientes').textContent = ingredientes.length;
