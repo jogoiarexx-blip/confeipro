@@ -251,8 +251,7 @@ function passoAssistenteReceita(delta) {
     return;
   }
   if (delta > 0 && cp23Passo === 3) {
-    fecharAssistenteReceita();
-    goTab(4);
+    transferirReceitaParaProduto();
     return;
   }
   cp23Passo = Math.max(0, Math.min(3, cp23Passo + delta));
@@ -265,10 +264,45 @@ function renderAssistenteReceita() {
     '<h3>1. Confira os ingredientes</h3><p>Cadastre os ingredientes e seus preços antes de montar a receita. Você tem <strong>'+ingredientes.length+'</strong> ingredientes cadastrados.</p><button type="button" class="btn btn-outline" onclick="goTab(1)">Abrir ingredientes</button>',
     '<h3>2. Monte a receita</h3><p>Use o formulário “Montar receita” logo abaixo para selecionar os ingredientes e informar as quantidades. Itens adicionados: <strong>'+receita.length+'</strong>.</p>',
     '<h3>3. Confira o custo e o rendimento</h3><p>Confira o total de ingredientes, informe quantas porções a receita rende e calcule o preço no formulário desta página. O preço sugerido é uma estimativa que você pode ajustar.</p><p><strong>Custo atual dos ingredientes: '+fmt(receita.reduce((s,r)=>s+(Number(r.custo)||0),0))+'</strong></p>',
-    '<h3>4. Transforme em produto</h3><p>Depois de conferir a receita, vá para Produtos para cadastrar o item que será vendido. Os dados existentes não serão apagados.</p>'
+    '<h3>4. Transforme em produto</h3><p>Informe o nome e o rendimento. Os ingredientes serão copiados para Produtos sem salvar automaticamente.</p><label for="cp23NomeProduto">Nome do produto</label><input id="cp23NomeProduto" maxlength="120" placeholder="Ex.: Bolo de chocolate"><label for="cp23RendimentoProduto">Rendimento (porções)</label><input id="cp23RendimentoProduto" type="number" min="1" max="100000" step="1" value="1"><p class="cp23-hint">Confira os custos e o preço no formulário de Produtos antes de salvar.</p>'
   ];
   painel.innerHTML = textos[cp23Passo];
   document.getElementById('cp23GuideProgress').textContent = 'Etapa '+(cp23Passo+1)+' de 4';
   document.getElementById('cp23GuideBack').disabled = cp23Passo === 0;
-  document.getElementById('cp23GuideNext').textContent = cp23Passo === 3 ? 'Ir para Produtos' : 'Próximo';
+  document.getElementById('cp23GuideNext').textContent = cp23Passo === 3 ? 'Preencher produto' : 'Próximo';
+}
+
+
+// V2.3.1: transferência guiada, sem gravação automática ou alteração do cadastro.
+function transferirReceitaParaProduto() {
+  const nome = document.getElementById('cp23NomeProduto')?.value.trim() || '';
+  const rendimento = Number(document.getElementById('cp23RendimentoProduto')?.value);
+  if (!nome || !Number.isInteger(rendimento) || rendimento < 1 || rendimento > 100000) {
+    toast('Informe nome e rendimento inteiro válido', 'warn'); return;
+  }
+  if (!receita.length) { toast('Adicione ingredientes à receita', 'warn'); return; }
+  const aplicar = function() {
+    resetFormProduto();
+    produtoEmEdicao.massa = receita.map(item => ({
+      nome: item.nome, qtd: Number(item.qtd), unidade: item.unidade, custo: Number(item.custo)
+    }));
+    document.getElementById('pdNome').value = nome;
+    document.getElementById('pdRendimento').value = rendimento;
+    renderEtapasProduto();
+    autoCalcularProduto();
+    fecharAssistenteReceita();
+    goTab(4);
+    document.getElementById('pdNome').scrollIntoView({behavior:'smooth',block:'center'});
+    toast('✓ Receita copiada. Revise os custos e salve o produto.');
+  };
+  const temRascunho = editandoProdutoId || document.getElementById('pdNome')?.value.trim() ||
+    ['massa','recheio','cobertura','decoracao'].some(etapa => produtoEmEdicao[etapa]?.length);
+  if (temRascunho) {
+    abrirConfirmacao({
+      titulo: 'Substituir formulário atual?',
+      mensagem: 'Há alterações não salvas em Produtos. Substituir o formulário? Os produtos já cadastrados não serão modificados.',
+      textoConfirmar: 'Substituir formulário',
+      aoConfirmar: aplicar
+    });
+  } else aplicar();
 }
