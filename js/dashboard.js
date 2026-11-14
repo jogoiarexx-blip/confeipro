@@ -1,9 +1,27 @@
 // ═══════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════
+// Cálculo puro do resumo financeiro: ignora orçamentos e cancelamentos.
+// Compatibilidade: "sinal" representa todo o valor já recebido por pedido.
+function calcularResumoFinanceiro(registros) {
+  const efetivos = registros.filter(p => !['cancelado', 'orcamento'].includes(p.status));
+  const valorSeguro = p => Math.max(0, Number(p.valor) || 0);
+  const vendido = efetivos.reduce((s,p) => s + valorSeguro(p), 0);
+  const recebido = efetivos.reduce((s,p) => s + Math.min(valorSeguro(p), Math.max(0, Number(p.sinal) || 0)), 0);
+  const quitados = efetivos.filter(p => valorSeguro(p) > 0 && (Number(p.sinal)||0) >= valorSeguro(p)).length;
+  return {
+    vendido: arred(vendido),
+    recebido: arred(recebido),
+    receber: arred(Math.max(0, vendido - recebido)),
+    quitados,
+    quantidade: efetivos.length
+  };
+}
+
 function atualizarDashboard() {
   const validos = pedidos.filter(p => !['cancelado','orcamento'].includes(p.status));
-  const total = arred(validos.reduce((s,p) => s + (parseFloat(p.valor)||0), 0));
+  const resumoFinanceiro = calcularResumoFinanceiro(pedidos);
+  const total = resumoFinanceiro.vendido;
   const custos = arred(validos.reduce((s,p) => s + (parseFloat(p.custoTotal)||0), 0));
   const lucro = arred(validos.reduce((s,p) => s + (p.lucroEstimado != null ? parseFloat(p.lucroEstimado)||0 : (parseFloat(p.valor)||0)-(parseFloat(p.custoTotal)||0)), 0));
   const ticket = validos.length ? arred(total / validos.length) : 0;
@@ -56,10 +74,7 @@ function atualizarDashboard() {
     else linhas.forEach(t => { const p=document.createElement('p');p.textContent=t;avisos.appendChild(p); });
   }
   // V2.5 — posição financeira de pedidos efetivados; orçamento não é venda.
-  const recebido = arred(validos.reduce((s,p) => s + Math.min(Math.max(Number(p.sinal)||0,0),Math.max(Number(p.valor)||0,0)),0));
-  const receber = arred(Math.max(0,total-recebido));
-  const quitados = validos.filter(p => (Number(p.valor)||0)>0 && (Number(p.sinal)||0)>=(Number(p.valor)||0)).length;
-  const indicadores = [['d25Recebido',fmt(recebido)],['d25Receber',fmt(receber)],['d25Quitados',String(quitados)]];
+  const indicadores = [['d25Recebido',fmt(resumoFinanceiro.recebido)],['d25Receber',fmt(resumoFinanceiro.receber)],['d25Quitados',String(resumoFinanceiro.quitados)]];
   indicadores.forEach(([id,valor]) => { const el=document.getElementById(id);if(el)el.textContent=valor; });
   document.getElementById('dFaturado').textContent = fmt(total);
   document.getElementById('dPedidos').textContent = validos.length;
