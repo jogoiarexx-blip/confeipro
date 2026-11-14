@@ -2,7 +2,7 @@
 // DASHBOARD
 // ═══════════════════════════════════════════
 function atualizarDashboard() {
-  const validos = pedidos.filter(p => p.status !== 'cancelado');
+  const validos = pedidos.filter(p => !['cancelado','orcamento'].includes(p.status));
   const total = arred(validos.reduce((s,p) => s + (parseFloat(p.valor)||0), 0));
   const custos = arred(validos.reduce((s,p) => s + (parseFloat(p.custoTotal)||0), 0));
   const lucro = arred(validos.reduce((s,p) => s + (p.lucroEstimado != null ? parseFloat(p.lucroEstimado)||0 : (parseFloat(p.valor)||0)-(parseFloat(p.custoTotal)||0)), 0));
@@ -55,6 +55,12 @@ function atualizarDashboard() {
     if (!linhas.length) avisos.textContent = '✓ Nenhum alerta urgente registrado.';
     else linhas.forEach(t => { const p=document.createElement('p');p.textContent=t;avisos.appendChild(p); });
   }
+  // V2.5 — posição financeira de pedidos efetivados; orçamento não é venda.
+  const recebido = arred(validos.reduce((s,p) => s + Math.min(Math.max(Number(p.sinal)||0,0),Math.max(Number(p.valor)||0,0)),0));
+  const receber = arred(Math.max(0,total-recebido));
+  const quitados = validos.filter(p => (Number(p.valor)||0)>0 && (Number(p.sinal)||0)>=(Number(p.valor)||0)).length;
+  const indicadores = [['d25Recebido',fmt(recebido)],['d25Receber',fmt(receber)],['d25Quitados',String(quitados)]];
+  indicadores.forEach(([id,valor]) => { const el=document.getElementById(id);if(el)el.textContent=valor; });
   document.getElementById('dFaturado').textContent = fmt(total);
   document.getElementById('dPedidos').textContent = validos.length;
   document.getElementById('dIngredientes').textContent = ingredientes.length;
