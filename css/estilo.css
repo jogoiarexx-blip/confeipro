@@ -1381,3 +1381,5 @@ input[type="date"] { width: 100%; }
 .cp24-agenda-item p{margin:4px 0 0;font-size:.9rem;color:var(--muted,#766c64)}
 .cp24-agenda-item .btn{flex-shrink:0}
 @media(max-width:390px){.cp24-agenda-item{align-items:flex-start;flex-direction:column}}
+
+.cp241-paid{font-size:.78rem;color:var(--muted,#766c64);align-self:center}
