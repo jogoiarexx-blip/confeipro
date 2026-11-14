@@ -11,5 +11,5 @@ const CONFIG = {
   nomeBase:    'Confei',                    // primeira parte do nome
   nomeDestaque:'pro',                       // parte destacada (cor --accent)
   tagline:     'seu negócio organizado', // subtítulo abaixo do nome
-  versao:      'v2.3.1',                      // selo de versão no cabeçalho
+  versao:      'v2.4',                      // selo de versão no cabeçalho
 };

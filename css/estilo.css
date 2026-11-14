@@ -1373,3 +1373,11 @@ input[type="date"] { width: 100%; }
 .cp23-guide-actions{margin-top:16px}
 .cp23-hint{font-size:.85rem;color:var(--muted,#766c64);margin:3px 0 10px;line-height:1.5}
 @media(max-width:420px){.cp23-quick-actions{grid-template-columns:1fr}.cp23-guide-actions .btn{min-width:0}}
+
+
+/* V2.4: agenda de encomendas */
+.cp24-agenda-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border,#e6d9cf)}
+.cp24-agenda-item:last-child{border-bottom:0}
+.cp24-agenda-item p{margin:4px 0 0;font-size:.9rem;color:var(--muted,#766c64)}
+.cp24-agenda-item .btn{flex-shrink:0}
+@media(max-width:390px){.cp24-agenda-item{align-items:flex-start;flex-direction:column}}
