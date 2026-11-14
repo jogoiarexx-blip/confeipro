@@ -397,6 +397,7 @@
      TAB 2 — PEDIDOS
 ══════════════════════════════════════════════ -->
 <div class="page" id="tab2">
+<section class="card cp24-agenda" aria-labelledby="cp24AgendaTitle"><div class="card-title" id="cp24AgendaTitle">📅 Agenda de entregas</div><p class="cp23-hint">Pedidos ativos com data de entrega, organizados por prazo. Orçamentos e cancelados ficam fora da agenda.</p><div id="cp24Agenda" aria-live="polite"></div></section>
 
   <div class="card">
     <div class="card-title"><span class="dot"></span><span id="pedidoFormTitulo">Novo pedido</span></div>
@@ -415,7 +416,7 @@
       <div><label for="pDataEntrega">Data de entrega</label><input id="pDataEntrega" type="date"></div>
     </div>
     <div class="row">
-      <div><label for="pSinal">Sinal recebido (R$)</label><input id="pSinal" type="number" value="0" min="0" step="0.01"></div>
+      <div><label for="pSinal">Valor recebido (R$)</label><p class="cp23-hint">Informe o total já pago pelo cliente, inclusive sinal e pagamentos posteriores. O saldo é calculado automaticamente.</p><input id="pSinal" type="number" value="0" min="0" step="0.01"></div>
       <div><label for="pPagamento">Pagamento</label><select id="pPagamento"><option value="">Não informado</option><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select></div>
     </div>
     <label for="pStatus">Status</label>
