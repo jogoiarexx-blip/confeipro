@@ -194,6 +194,7 @@ function renderPedidos() {
   const totalDiv = document.getElementById('totalPedidosDiv');
   if (!lista) return;
 
+  renderAgendaEntregas();
   if (!pedidos.length) {
     lista.innerHTML = '<div class="empty-state">📋 Nenhum pedido registrado ainda.<br>Adicione o primeiro ali em cima!</div>';
     if (totalDiv) totalDiv.style.display = 'none';
@@ -272,4 +273,37 @@ function preencherValorDaReceita() {
   const qtd = Math.max(1, parseFloat(document.getElementById('pQuantidade')?.value)||1);
   document.getElementById('pValor').value = arred(valorUnit*qtd).toFixed(2);
   toast('✓ Valor preenchido com o preço da receita');
+}
+
+
+// V2.4: agenda derivada dos pedidos existentes, sem novo armazenamento.
+function renderAgendaEntregas() {
+  const el = document.getElementById('cp24Agenda');
+  if (!el) return;
+  const hoje = hojeISO();
+  const ativos = pedidos.filter(p => p.dataEntrega && !['orcamento','cancelado','entregue'].includes(p.status))
+    .sort((a,b) => a.dataEntrega.localeCompare(b.dataEntrega) || String(a.cliente||'').localeCompare(String(b.cliente||''),'pt-BR'));
+  if (!ativos.length) { el.textContent = 'Nenhuma entrega pendente com data cadastrada.'; return; }
+  el.replaceChildren();
+  ativos.slice(0,30).forEach(p => {
+    const linha = document.createElement('div');
+    linha.className = 'cp24-agenda-item';
+    const prazo = p.dataEntrega < hoje ? 'Atrasado' : p.dataEntrega === hoje ? 'Hoje' : 'Programado';
+    const info = document.createElement('div');
+    const titulo = document.createElement('strong');
+    titulo.textContent = formatarDataCurta(p.dataEntrega) + ' · ' + prazo;
+    const detalhe = document.createElement('p');
+    detalhe.textContent = (p.cliente || 'Cliente') + ' — ' + (p.produto || 'Produto') + ' · ' + (STATUS_PEDIDO[p.status] || p.status);
+    info.append(titulo,detalhe);
+    const botao = document.createElement('button');
+    botao.type = 'button'; botao.className = 'btn btn-outline'; botao.textContent = 'Editar';
+    botao.addEventListener('click',() => editarPedido(p.id));
+    linha.append(info,botao);
+    el.appendChild(linha);
+  });
+  if (ativos.length > 30) {
+    const aviso = document.createElement('p');
+    aviso.textContent = 'Mostrando as próximas 30 entregas de ' + ativos.length + '.';
+    el.appendChild(aviso);
+  }
 }
