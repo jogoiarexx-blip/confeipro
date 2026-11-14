@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
-// CONFEIPRO PWA — Service Worker v22
+// CONFEIPRO PWA — Service Worker v23
 // HTML e assets: conjunto consistente por versão, disponível offline.
 // Atualização: o app mostra "Atualizar agora" e envia SKIP_WAITING.
 // ═══════════════════════════════════════════════════════════════
-const CACHE_NAME = 'confeipro-v22';
+const CACHE_NAME = 'confeipro-v23';
 const OFFLINE_URL = './index.html';
 
 const ARQUIVOS_PARA_CACHE = [

@@ -228,3 +228,47 @@ function acaoFabMobile() {
   goTab(2);
   focar('pCliente');
 }
+
+
+// ConfeiPro 2.3 — orientação progressiva sem alterar os dados persistidos.
+let cp23Passo = 0;
+function abrirAssistenteReceita() {
+  goTab(0);
+  const painel = document.getElementById('cp23Guide');
+  if (!painel) return;
+  cp23Passo = 0;
+  painel.hidden = false;
+  renderAssistenteReceita();
+  painel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function fecharAssistenteReceita() {
+  const painel = document.getElementById('cp23Guide');
+  if (painel) painel.hidden = true;
+}
+function passoAssistenteReceita(delta) {
+  if (delta > 0 && cp23Passo === 1 && !receita.length) {
+    toast('Adicione pelo menos um ingrediente à receita para continuar', 'warn');
+    return;
+  }
+  if (delta > 0 && cp23Passo === 3) {
+    fecharAssistenteReceita();
+    goTab(4);
+    return;
+  }
+  cp23Passo = Math.max(0, Math.min(3, cp23Passo + delta));
+  renderAssistenteReceita();
+}
+function renderAssistenteReceita() {
+  const painel = document.getElementById('cp23GuideContent');
+  if (!painel) return;
+  const textos = [
+    '<h3>1. Confira os ingredientes</h3><p>Cadastre os ingredientes e seus preços antes de montar a receita. Você tem <strong>'+ingredientes.length+'</strong> ingredientes cadastrados.</p><button type="button" class="btn btn-outline" onclick="goTab(1)">Abrir ingredientes</button>',
+    '<h3>2. Monte a receita</h3><p>Use o formulário “Montar receita” logo abaixo para selecionar os ingredientes e informar as quantidades. Itens adicionados: <strong>'+receita.length+'</strong>.</p>',
+    '<h3>3. Confira o custo e o rendimento</h3><p>Confira o total de ingredientes, informe quantas porções a receita rende e calcule o preço no formulário desta página. O preço sugerido é uma estimativa que você pode ajustar.</p><p><strong>Custo atual dos ingredientes: '+fmt(receita.reduce((s,r)=>s+(Number(r.custo)||0),0))+'</strong></p>',
+    '<h3>4. Transforme em produto</h3><p>Depois de conferir a receita, vá para Produtos para cadastrar o item que será vendido. Os dados existentes não serão apagados.</p>'
+  ];
+  painel.innerHTML = textos[cp23Passo];
+  document.getElementById('cp23GuideProgress').textContent = 'Etapa '+(cp23Passo+1)+' de 4';
+  document.getElementById('cp23GuideBack').disabled = cp23Passo === 0;
+  document.getElementById('cp23GuideNext').textContent = cp23Passo === 3 ? 'Ir para Produtos' : 'Próximo';
+}

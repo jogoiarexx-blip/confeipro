@@ -1353,3 +1353,23 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 .row > div { min-width: 0; }
 input[type="date"] { width: 100%; }
 @media (max-width: 380px) { .row { grid-template-columns: 1fr; } }
+
+
+/* ConfeiPro v2.3: ações orientadas e ajuda contextual */
+.cp23-welcome{background:var(--card,#fff);border:1px solid var(--border,#e9ddd5);border-radius:18px;padding:20px;margin-bottom:18px}
+.cp23-welcome h2{margin:0 0 6px;font-size:1.35rem}
+.cp23-welcome p{margin:4px 0 12px}
+.cp23-quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
+.cp23-quick-actions button{padding:13px 12px;border-radius:12px;border:1px solid var(--border,#d9c7bd);background:var(--bg,#fff8f0);color:var(--text,#30241d);font:inherit;font-weight:700;cursor:pointer;text-align:left}
+.cp23-quick-actions button:focus-visible,.cp23-guide button:focus-visible{outline:3px solid var(--accent,#a65e49);outline-offset:2px}
+.cp23-alerts{font-size:.92rem;margin-top:12px}
+.cp23-alerts p{margin:6px 0}
+.cp23-guide-launch{margin:0 0 16px}
+.cp23-guide{margin-bottom:18px}
+.cp23-guide[hidden]{display:none!important}
+.cp23-guide-head,.cp23-guide-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cp23-guide-head h2{margin:0}
+.cp23-guide-head button{border:0;background:transparent;color:inherit;font-size:1.3rem;cursor:pointer}
+.cp23-guide-actions{margin-top:16px}
+.cp23-hint{font-size:.85rem;color:var(--muted,#766c64);margin:3px 0 10px;line-height:1.5}
+@media(max-width:420px){.cp23-quick-actions{grid-template-columns:1fr}.cp23-guide-actions .btn{min-width:0}}

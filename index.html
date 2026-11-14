@@ -84,6 +84,13 @@
     </header>
 
 <div class="page active" id="tab0">
+<section class="cp23-guide card" id="cp23Guide" hidden aria-labelledby="cp23GuideTitle">
+ <div class="cp23-guide-head"><h2 id="cp23GuideTitle">Assistente de receitas</h2><button type="button" onclick="fecharAssistenteReceita()" aria-label="Fechar assistente">✕</button></div>
+ <p id="cp23GuideProgress" aria-live="polite"></p>
+ <div id="cp23GuideContent"></div>
+ <div class="cp23-guide-actions"><button type="button" class="btn btn-outline" id="cp23GuideBack" onclick="passoAssistenteReceita(-1)">Voltar</button><button type="button" class="btn" id="cp23GuideNext" onclick="passoAssistenteReceita(1)">Próximo</button></div>
+</section>
+<button type="button" class="btn btn-outline cp23-guide-launch" onclick="abrirAssistenteReceita()">✨ Criar receita com ajuda</button>
 
   <div class="card collapsible-card">
     <button class="collapsible-header" type="button" onclick="toggleSecaoReceitasProntas()" aria-expanded="false" aria-controls="conteudoReceitasProntas">
@@ -124,7 +131,7 @@
   <div class="card">
     <div class="card-title"><span class="dot"></span>Montar receita</div>
 
-    <label for="rSelect">Ingrediente</label>
+    <label for="rSelect">Ingrediente</label><p class="cp23-hint">Escolha um ingrediente cadastrado. Se não encontrar, cadastre-o em Ingredientes.</p>
     <select id="rSelect" onchange="aoSelecionarIngrediente()">
       <option value="">— selecionar ingrediente —</option>
     </select>
@@ -133,7 +140,7 @@
       <span class="chip" id="rChip"></span>
     </div>
 
-    <label>Quantidade usada</label>
+    <label for="rQtdUsada">Quantidade usada</label><p class="cp23-hint">Informe quanto desse ingrediente entra na receita, usando a unidade indicada ao lado.</p>
     <div class="row">
       <input id="rQtdUsada" type="number" placeholder="Ex: 50" step="0.01" min="0">
       <input id="rUnidadeDisplay" readonly placeholder="unidade" style="color:var(--muted);">
@@ -449,6 +456,15 @@
      TAB 3 — DASHBOARD
 ══════════════════════════════════════════════ -->
 <div class="page" id="tab3">
+<section class="cp23-welcome" aria-labelledby="cp23Title">
+  <div><h2 id="cp23Title">Seu dia na confeitaria 🧁</h2><p>Comece por uma tarefa ou veja o que precisa de atenção.</p></div>
+  <div class="cp23-quick-actions">
+    <button type="button" onclick="abrirAssistenteReceita()">🥣 Criar receita guiada</button>
+    <button type="button" onclick="goTab(2)">📋 Nova encomenda</button>
+    <button type="button" onclick="goTab(1)">🧂 Cadastrar ingrediente</button>
+  </div>
+  <div class="cp23-alerts" id="cp23Alerts" role="status" aria-live="polite"></div>
+</section>
 
   <div class="dash-grid">
     <div class="dash-card">
