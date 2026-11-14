@@ -445,7 +445,7 @@
     <div id="listaPedidos"><div class="empty-state">📋 Nenhum pedido registrado ainda.<br>Adicione o primeiro ali em cima!</div></div>
     <div id="totalPedidosDiv" style="display:none;">
       <div class="total-bar">
-        <span>Total faturado</span>
+        <span>Total dos pedidos efetivados</span>
         <span class="result-value green" id="totalPedidosValor">R$ 0,00</span>
       </div>
     </div>
@@ -467,9 +467,19 @@
   <div class="cp23-alerts" id="cp23Alerts" role="status" aria-live="polite"></div>
 </section>
 
+  <section class="cp25-finance" aria-labelledby="cp25FinanceTitle">
+    <h3 id="cp25FinanceTitle">💳 Resumo financeiro das encomendas</h3>
+    <p>Somente pedidos confirmados ou em andamento. Orçamentos e cancelamentos não entram nos valores.</p>
+    <div class="cp25-finance-grid">
+      <div><span>Já recebido</span><strong id="d25Recebido">R$ 0,00</strong></div>
+      <div><span>A receber</span><strong id="d25Receber">R$ 0,00</strong></div>
+      <div><span>Pedidos quitados</span><strong id="d25Quitados">0</strong></div>
+    </div>
+    <p class="cp25-finance-note">O valor recebido inclui o sinal e pagamentos adicionais. Não representa necessariamente dinheiro em caixa.</p>
+  </section>
   <div class="dash-grid">
     <div class="dash-card">
-      <div class="dash-label">💰 Faturado</div>
+      <div class="dash-label">💰 Vendas efetivadas</div>
       <div class="dash-value" id="dFaturado" style="color:var(--green)">R$ 0</div>
     </div>
     <div class="dash-card">

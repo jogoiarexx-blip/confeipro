@@ -281,7 +281,7 @@ function renderPedidos() {
     }).join('');
   }
 
-  const validos = pedidos.filter(p => p.status !== 'cancelado');
+  const validos = pedidos.filter(p => !['cancelado', 'orcamento'].includes(p.status));
   const total = arred(validos.reduce((s,p) => s + (parseFloat(p.valor)||0),0));
   document.getElementById('totalPedidosValor').textContent = fmt(total);
   if (totalDiv) totalDiv.style.display = 'block';
