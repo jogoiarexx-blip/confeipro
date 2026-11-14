@@ -10,6 +10,6 @@ const CONFIG = {
   emoji:       '🧁',                        // emoji do logo
   nomeBase:    'Confei',                    // primeira parte do nome
   nomeDestaque:'pro',                       // parte destacada (cor --accent)
-  tagline:     'sua calculadora de preços', // subtítulo abaixo do nome
-  versao:      'v2.2',                      // selo de versão no cabeçalho
+  tagline:     'seu negócio organizado', // subtítulo abaixo do nome
+  versao:      'v2.3',                      // selo de versão no cabeçalho
 };
