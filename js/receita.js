@@ -538,6 +538,7 @@ function toggleSecaoReceitasProntas(forcarAberto) {
 function filtrarReceitasProntas() {
   const campo = document.getElementById('pesquisaReceita');
   const termo = normalizarBuscaReceita(campo ? campo.value : '');
+  const pastaAtiva = filtroPastaReceitas;
   const botoes = Array.from(document.querySelectorAll('#listaReceitasProntas .receita-preset'));
   const gerenciaveis = Array.from(document.querySelectorAll('#listaReceitasGerenciaveis .managed-recipe-card'));
   let visiveis = 0;
@@ -550,13 +551,19 @@ function filtrarReceitasProntas() {
   });
   gerenciaveis.forEach(card => {
     const base = normalizarBuscaReceita(card.dataset.recipeName || card.textContent || '');
-    const mostrar = !termo || base.includes(termo);
+    const mostrar = (!termo || base.includes(termo)) &&
+      (pastaAtiva === 'todas' || card.dataset.recipePasta === pastaAtiva);
     card.style.display = mostrar ? '' : 'none';
     if (mostrar) visiveis++;
   });
 
   const vazio = document.getElementById('semReceitasEncontradas');
-  if (vazio) vazio.style.display = visiveis ? 'none' : 'block';
+  if (vazio) {
+    vazio.style.display = visiveis ? 'none' : 'block';
+    vazio.textContent = !termo && pastaAtiva === 'natal'
+      ? '🎄 Sua pasta de Natal está vazia. Monte uma receita e salve selecionando a pasta de Natal.'
+      : '🔎 Nenhuma receita encontrada.';
+  }
 }
 
 function toggleIngredientesReceita(forcarAberto) {
@@ -581,6 +588,9 @@ function atualizarContadoresReceitaUI() {
   if (qtdProntas) qtdProntas.textContent = (typeof receitasGerenciaveis !== 'undefined' && receitasGerenciaveis.length)
     ? receitasGerenciaveis.length
     : document.querySelectorAll('#listaReceitasProntas .receita-preset').length;
+  const qtdNatal = document.getElementById('qtdReceitasNatal');
+  if (qtdNatal) qtdNatal.textContent = typeof receitasGerenciaveis !== 'undefined'
+    ? receitasGerenciaveis.filter(r => pastaDaReceita(r) === 'natal').length : 0;
 }
 
 // Mantém os contadores sincronizados sem alterar a lógica original.
@@ -601,6 +611,36 @@ document.addEventListener('DOMContentLoaded', function() {
 // ═══════════════════════════════════════════════════════════
 let receitasGerenciaveis = JSON.parse(localStorage.getItem('cpReceitasGerenciaveis') || '[]');
 let receitaGerenciavelEditandoId = null;
+
+// Pastas virtuais: receitas anteriores continuam na pasta Geral, sem migração destrutiva.
+let filtroPastaReceitas = 'todas';
+function pastaDaReceita(r) {
+  return r && r.pasta === 'natal' ? 'natal' : 'geral';
+}
+
+function selecionarPastaReceitas(pasta) {
+  if (!['todas', 'natal', 'geral'].includes(pasta)) return;
+  filtroPastaReceitas = pasta;
+  document.querySelectorAll('.recipe-folder-btn').forEach(btn => {
+    const ativo = btn.dataset.pasta === pasta;
+    btn.classList.toggle('active', ativo);
+    btn.setAttribute('aria-pressed', String(ativo));
+  });
+  const seletor = document.getElementById('pastaNovaReceita');
+  if (seletor && pasta !== 'todas') seletor.value = pasta;
+  filtrarReceitasProntas();
+}
+
+function alterarPastaReceitaGerenciavel(id, pasta) {
+  if (!['natal', 'geral'].includes(pasta)) return;
+  const r = receitasGerenciaveis.find(x => x.id === id);
+  if (!r) return;
+  r.pasta = pasta;
+  r.atualizadoEm = new Date().toISOString();
+  salvarReceitasGerenciaveis();
+  renderReceitasGerenciaveis();
+  toast(pasta === 'natal' ? '🎄 Receita movida para Natal' : '✓ Receita movida para Geral');
+}
 
 function inicializarBibliotecaPadrao() {
   if (localStorage.getItem('cpReceitasBibliotecaInicializada') === '1') return;
@@ -659,6 +699,7 @@ function novaReceitaGerenciavelDaAtual() {
   receitasGerenciaveis.push({
     id: typeof cpUid === 'function' ? cpUid('rec') : 'rec_' + Date.now(),
     nome: nome.trim(),
+    pasta: document.getElementById('pastaNovaReceita')?.value === 'natal' ? 'natal' : 'geral',
     itens: JSON.parse(JSON.stringify(receita)),
     porcoes: parseFloat(document.getElementById('fPorcoes')?.value) || 1,
     config: CONFIG_RECEITA_IDS.reduce((o,id) => { o[id] = document.getElementById(id)?.value ?? ''; return o; }, {}),
@@ -757,9 +798,15 @@ function renderReceitasGerenciaveis() {
   if (originais) originais.style.display = 'none';
   if (divider) divider.style.display = 'none';
   el.innerHTML = receitasGerenciaveis.map(r => `
-    <div class="managed-recipe-card" data-recipe-name="${escapeHtml(r.nome)}">
+    <div class="managed-recipe-card" data-recipe-name="${escapeHtml(r.nome)}" data-recipe-pasta="${pastaDaReceita(r)}">
       <input class="managed-recipe-name" value="${escapeHtml(r.nome)}" onchange="renomearReceitaGerenciavel('${r.id}', this.value)" aria-label="Nome da receita">
       <div class="managed-recipe-meta">${(r.itens||[]).length} ingrediente(s) · ${r.porcoes||1} porção(ões)</div>
+      <label class="managed-recipe-folder-label">Pasta
+        <select class="managed-recipe-folder-select" onchange="alterarPastaReceitaGerenciavel('${r.id}', this.value)" aria-label="Pasta da receita ${escapeHtml(r.nome)}">
+          <option value="geral" ${pastaDaReceita(r)==='geral'?'selected':''}>📁 Geral</option>
+          <option value="natal" ${pastaDaReceita(r)==='natal'?'selected':''}>🎄 Receitas de Natal</option>
+        </select>
+      </label>
       <div class="mini-actions">
         <button class="btn btn-primary" onclick="carregarReceitaGerenciavel('${r.id}', false)">Carregar</button>
         <button class="btn btn-outline" onclick="carregarReceitaGerenciavel('${r.id}', true)">✎ Editar</button>
@@ -767,6 +814,8 @@ function renderReceitasGerenciaveis() {
         <button class="btn btn-red" onclick="excluirReceitaGerenciavel('${r.id}')">🗑</button>
       </div>
     </div>`).join('');
+  atualizarContadoresReceitaUI();
+  filtrarReceitasProntas();
 }
 
 function atualizarCustosReceitaAtual() {

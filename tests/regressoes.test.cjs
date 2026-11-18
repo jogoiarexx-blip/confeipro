@@ -94,3 +94,30 @@ test('V2.5: pagamentos excedentes e valores inconsistentes não geram recebiment
   assert.equal(resumo.receber,25);
   assert.equal(resumo.quitados,1);
 });
+
+
+test('V2.6: pasta Natal preserva receitas antigas e permite mover receitas salvas', () => {
+  const memoria = new Map([['cpReceitasGerenciaveis', JSON.stringify([{id:'r1',nome:'Bolo antigo',itens:[],porcoes:1}])]]);
+  const elementos = {
+    listaReceitasGerenciaveis:{innerHTML:''},
+    listaReceitasProntas:{style:{}},
+    modelosOriginaisDivider:{style:{}},
+    pesquisaReceita:{value:''},
+    semReceitasEncontradas:{style:{},textContent:''},
+    qtdReceitasNatal:{textContent:''},
+    qtdReceitasProntas:{textContent:''}
+  };
+  const c = contexto(['js/receita.js'], {
+    localStorage:{getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)},
+    document:{addEventListener(){},getElementById:id=>elementos[id]||null,querySelectorAll:()=>[]},
+    escapeHtml:x=>String(x),toast:()=>{}
+  });
+  assert.equal(c.pastaDaReceita({nome:'Antiga'}), 'geral');
+  c.alterarPastaReceitaGerenciavel('r1','natal');
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis'))[0].pasta,'natal');
+  assert.equal(elementos.qtdReceitasNatal.textContent,1);
+  assert.match(elementos.listaReceitasGerenciaveis.innerHTML,/data-recipe-pasta="natal"/);
+  c.alterarPastaReceitaGerenciavel('r1','geral');
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis'))[0].pasta,'geral');
+  assert.equal(elementos.qtdReceitasNatal.textContent,0);
+});

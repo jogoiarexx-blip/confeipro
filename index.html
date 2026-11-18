@@ -103,6 +103,18 @@
         <span class="recipe-search-icon">🔎</span>
         <input aria-label="Pesquisar receita" id="pesquisaReceita" type="search" placeholder="Pesquisar receita..." oninput="filtrarReceitasProntas()" autocomplete="off">
       </div>
+      <div class="recipe-folders" role="group" aria-label="Pastas das receitas">
+        <button class="recipe-folder-btn active" type="button" data-pasta="todas" aria-pressed="true" onclick="selecionarPastaReceitas('todas')">📚 Todas</button>
+        <button class="recipe-folder-btn recipe-folder-natal" type="button" data-pasta="natal" aria-pressed="false" onclick="selecionarPastaReceitas('natal')">🎄 Receitas de Natal <span class="recipe-folder-count" id="qtdReceitasNatal">0</span></button>
+        <button class="recipe-folder-btn" type="button" data-pasta="geral" aria-pressed="false" onclick="selecionarPastaReceitas('geral')">📁 Demais receitas</button>
+      </div>
+      <div class="recipe-save-folder">
+        <label for="pastaNovaReceita">Pasta para salvar a próxima receita</label>
+        <select id="pastaNovaReceita" aria-label="Pasta para salvar a receita">
+          <option value="geral">📁 Geral</option>
+          <option value="natal">🎄 Receitas de Natal</option>
+        </select>
+      </div>
       <div class="managed-recipe-tools">
         <button class="btn btn-outline" type="button" onclick="novaReceitaGerenciavelDaAtual()">💾 Salvar receita atual na biblioteca</button>
         <button class="btn btn-outline" type="button" id="btnSalvarReceitaEditada" onclick="salvarEdicaoReceitaGerenciavel()" style="display:none;">✓ Salvar alterações da receita</button>
