@@ -151,10 +151,9 @@ test('V2.8: notificações somem sozinhas e podem ser fechadas manualmente', () 
   const timers = [];
   const cancelados = new Set();
   let idAtual = 0;
-  const classes = new Set();
   const el = {
     innerHTML:'',className:'toast',
-    classList:{remove(nome) { classes.delete(nome); el.className=el.className.replace(new RegExp('\\\\b'+nome+'\\\\b','g'),'').trim(); }}
+    classList:{remove(nome) { el.className=el.className.split(' ').filter(x=>x!==nome).join(' '); }}
   };
   const c = contexto(['js/utils.js'], {
     document:{getElementById:k=>k==='toast'?el:null},
@@ -162,14 +161,14 @@ test('V2.8: notificações somem sozinhas e podem ser fechadas manualmente', () 
     clearTimeout:id=>cancelados.add(id)
   });
   c.toast('🌙 Tema escuro ativado');
-  assert.match(el.className,/\\bshow\\b/);
+  assert.equal(el.className.includes('show'),true);
   assert.match(el.innerHTML,/Fechar notificação/);
   assert.equal(timers[0].delay,2600);
   timers[0].fn();
-  assert.doesNotMatch(el.className,/\\bshow\\b/);
+  assert.equal(el.className.includes('show'),false);
   c.toast('☀ Tema claro ativado');
   c.fecharToast();
-  assert.doesNotMatch(el.className,/\\bshow\\b/);
+  assert.equal(el.className.includes('show'),false);
   assert.ok(cancelados.has(timers[1].id));
 });
 
@@ -189,5 +188,5 @@ test('V2.8: novo aviso substitui anterior e mantém Desfazer funcionando', () =>
   c.toast('Excluir novamente',null,()=>{desfez=true;});
   c._toastAcionarDesfazer();
   assert.equal(desfez,true);
-  assert.doesNotMatch(el.className,/\\bshow\\b/);
+  assert.equal(el.className.includes('show'),false);
 });
