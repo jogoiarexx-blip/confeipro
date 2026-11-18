@@ -117,6 +117,11 @@
           <option value="natal">🎄 Receitas de Natal</option>
         </select>
       </div>
+      <div class="recipe-prep-edit">
+        <label for="modoPreparoReceita">Modo de preparo da receita (opcional)</label>
+        <textarea id="modoPreparoReceita" rows="4" placeholder="Escreva aqui como preparar sua receita, passo a passo."></textarea>
+        <small>Também é salvo ao criar ou editar uma receita da biblioteca.</small>
+      </div>
       <div class="managed-recipe-tools">
         <button class="btn btn-outline" type="button" onclick="novaReceitaGerenciavelDaAtual()">💾 Salvar receita atual na biblioteca</button>
         <button class="btn btn-outline" type="button" id="btnSalvarReceitaEditada" onclick="salvarEdicaoReceitaGerenciavel()" style="display:none;">✓ Salvar alterações da receita</button>
@@ -841,6 +846,7 @@
 <script src="js/dashboard.js"></script>
 <script src="js/ingredientes.js"></script>
 <script src="js/receita.js"></script>
+<script src="js/receitas-natal.js"></script>
 <script src="js/pedidos.js"></script>
 <script src="js/produtos.js"></script>
 <script src="js/gestao.js"></script>

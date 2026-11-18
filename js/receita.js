@@ -140,11 +140,15 @@ function renderReceita() {
     return;
   }
 
-  lista.innerHTML = receita.map((item, i) => `
+  const semCadastro = receita.filter(item => !ingredientes.some(ing => norm(ing.nome) === norm(item.nome)));
+  lista.innerHTML = (semCadastro.length ?
+    '<div class="recipe-missing-warning">⚠️ ' + semCadastro.length + ' ingrediente(s) sem preço cadastrado. O custo é parcial; cadastre-os na aba Ingredientes antes de calcular a venda.</div>' : '') +
+    receita.map((item, i) => `
     <div class="recipe-item">
       <div>
         <div class="recipe-name">${escapeHtml(item.nome)}</div>
         <select class="recipe-inline-select" aria-label="Trocar ingrediente" onchange="trocarIngredienteItemReceita(${i}, this.value)">
+          ${!ingredientes.some(ing => norm(ing.nome) === norm(item.nome)) ? '<option value="" selected disabled>⚠ Ingrediente não cadastrado</option>' : ''}
           ${ingredientes.map((ing, idxIng) => `<option value="${idxIng}" ${norm(ing.nome)===norm(item.nome)?'selected':''}>${escapeHtml(ing.nome)}</option>`).join('')}
         </select>
         <div class="recipe-sub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -163,19 +167,24 @@ function renderReceita() {
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span class="recipe-cost">${fmt(item.custo)}</span>
+        <span class="recipe-cost">${ingredientes.some(ing => norm(ing.nome) === norm(item.nome)) ? fmt(item.custo) : 'Preço pendente'}</span>
         <button class="btn-del" onclick="delItemReceita(${i})">✕</button>
       </div>
     </div>
   `).join('');
 
   const total = arred(receita.reduce((s, r) => s + r.custo, 0));
-  document.getElementById('totalReceita').textContent = fmt(total);
+  document.getElementById('totalReceita').textContent = fmt(total) + (semCadastro.length ? ' (parcial)' : '');
   totalDiv.style.display = 'block';
 }
 
 function calcularFinal() {
   if (!receita.length) { toast('⚠️ Adicione ingredientes à receita', 'err'); return; }
+  const semPreco = receita.filter(item => !ingredientes.some(ing => norm(ing.nome) === norm(item.nome)));
+  if (semPreco.length) {
+    toast('⚠️ Cadastre os ingredientes que faltam antes de calcular o preço de venda', 'warn');
+    return;
+  }
 
   const margem  = parseFloat(document.getElementById('fMargem').value);
   const porcoes = parseFloat(document.getElementById('fPorcoes').value) || 1;
@@ -701,6 +710,7 @@ function novaReceitaGerenciavelDaAtual() {
     nome: nome.trim(),
     pasta: document.getElementById('pastaNovaReceita')?.value === 'natal' ? 'natal' : 'geral',
     itens: JSON.parse(JSON.stringify(receita)),
+    modoPreparo: document.getElementById('modoPreparoReceita')?.value?.trim() || '',
     porcoes: parseFloat(document.getElementById('fPorcoes')?.value) || 1,
     config: CONFIG_RECEITA_IDS.reduce((o,id) => { o[id] = document.getElementById(id)?.value ?? ''; return o; }, {}),
     criadoEm: new Date().toISOString(),
@@ -724,6 +734,8 @@ function carregarReceitaGerenciavel(id, editar) {
     });
   }
   if (r.porcoes && document.getElementById('fPorcoes')) document.getElementById('fPorcoes').value = r.porcoes;
+  const preparo = document.getElementById('modoPreparoReceita');
+  if (preparo) preparo.value = r.modoPreparo || '';
   document.getElementById('resultFinal').style.display = 'none';
   receitaGerenciavelEditandoId = editar ? id : null;
   const btn = document.getElementById('btnSalvarReceitaEditada');
@@ -736,6 +748,7 @@ function salvarEdicaoReceitaGerenciavel() {
   const r = receitasGerenciaveis.find(x => x.id === receitaGerenciavelEditandoId);
   if (!r) { toast('⚠️ Nenhuma receita da biblioteca em edição', 'err'); return; }
   r.itens = JSON.parse(JSON.stringify(receita));
+  r.modoPreparo = document.getElementById('modoPreparoReceita')?.value?.trim() || '';
   r.porcoes = parseFloat(document.getElementById('fPorcoes')?.value) || 1;
   r.config = CONFIG_RECEITA_IDS.reduce((o,id) => { o[id] = document.getElementById(id)?.value ?? ''; return o; }, {});
   r.atualizadoEm = new Date().toISOString();
@@ -800,7 +813,16 @@ function renderReceitasGerenciaveis() {
   el.innerHTML = receitasGerenciaveis.map(r => `
     <div class="managed-recipe-card" data-recipe-name="${escapeHtml(r.nome)}" data-recipe-pasta="${pastaDaReceita(r)}">
       <input class="managed-recipe-name" value="${escapeHtml(r.nome)}" onchange="renomearReceitaGerenciavel('${r.id}', this.value)" aria-label="Nome da receita">
-      <div class="managed-recipe-meta">${(r.itens||[]).length} ingrediente(s) · ${r.porcoes||1} porção(ões)</div>
+      <div class="managed-recipe-meta">${(r.itens||[]).length} ingrediente(s) · ${escapeHtml(r.unidadeRendimento || ((r.porcoes||1) + ' porção(ões)'))}${r.tempoMinutos ? ' · cerca de ' + r.tempoMinutos + ' min' : ''}</div>
+      ${r.pasta === 'natal' && (r.itens||[]).some(item => !ingredientes.some(ing => norm(ing.nome) === norm(item.nome))) ?
+        '<p class="recipe-missing-warning">⚠️ Custo incompleto: cadastre os ingredientes faltantes para calcular o preço.</p>' : ''}
+      <details class="managed-recipe-details">
+        <summary>📖 Ver ingredientes e modo de preparo</summary>
+        <ul class="managed-recipe-ingredient-list">
+          ${(r.itens||[]).map(item => `<li>${escapeHtml(item.qtd)} ${escapeHtml(item.unidade)} de ${escapeHtml(item.nome)}${!ingredientes.some(ing => norm(ing.nome) === norm(item.nome)) ? ' <strong>(sem preço)</strong>' : ''}</li>`).join('')}
+        </ul>
+        ${r.modoPreparo ? `<h4>Modo de preparo</h4><div class="managed-recipe-instructions">${escapeHtml(r.modoPreparo)}</div>` : '<p>Sem modo de preparo cadastrado.</p>'}
+      </details>
       <label class="managed-recipe-folder-label">Pasta
         <select class="managed-recipe-folder-select" onchange="alterarPastaReceitaGerenciavel('${r.id}', this.value)" aria-label="Pasta da receita ${escapeHtml(r.nome)}">
           <option value="geral" ${pastaDaReceita(r)==='geral'?'selected':''}>📁 Geral</option>

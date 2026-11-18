@@ -190,3 +190,33 @@ test('V2.8: novo aviso substitui anterior e mantém Desfazer funcionando', () =>
   assert.equal(desfez,true);
   assert.equal(el.className.includes('show'),false);
 });
+
+
+test('V2.9: 12 receitas natalinas são instaladas uma única vez sem apagar as antigas', () => {
+  const memoria=new Map([['cpReceitasBibliotecaInicializada','1']]);
+  const elem={innerHTML:'',style:{}};
+  const el={getElementById:()=>elem,addEventListener(){},querySelectorAll:()=>[]};
+  const localStorage={getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)};
+  const c=contexto(['js/utils.js','js/receita.js','js/receitas-natal.js'],{document:el,localStorage});
+  vm.runInContext("receitasGerenciaveis.push({id:'minha_receita',nome:'Minha receita',itens:[]}); ingredientes=[{nome:'Farinha de trigo',unidade:'g',precoTotal:6,qtdTotal:1000}];",c);
+  c.inicializarReceitasNatal();
+  let todas=JSON.parse(memoria.get('cpReceitasGerenciaveis'));
+  assert.equal(todas.filter(r=>r.pasta==='natal').length,12);
+  assert.equal(todas.find(r=>r.id==='minha_receita').nome,'Minha receita');
+  assert.ok(todas.every(r=>r.id==='minha_receita'||r.modoPreparo));
+  assert.ok(todas.find(r=>r.id==='rec_natal_panetone').itens.some(i=>i.nome==='Frutas cristalizadas'&&i.custo===0));
+  c.inicializarReceitasNatal();
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,13);
+});
+
+test('V2.9: ingredientes sem preço impedem preço de venda incompleto', () => {
+  const c=contexto(['js/utils.js','js/receita.js'],{
+    localStorage:{getItem:()=>null},
+    document:{addEventListener(){},getElementById:()=>null}
+  });
+  let aviso='';
+  c.toast=mensagem=>aviso=mensagem;
+  vm.runInContext("let receita=[{nome:'Frutas cristalizadas',qtd:150,unidade:'g',custo:0}];let ingredientes=[];",c);
+  c.calcularFinal();
+  assert.match(aviso,/Cadastre os ingredientes/);
+});

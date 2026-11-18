@@ -1003,6 +1003,16 @@ select option { background: var(--surface2); }
 .recipe-save-folder select { width: auto; flex: 1; min-width: 160px; }
 .managed-recipe-folder-label { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .managed-recipe-folder-select { flex: 1; min-width: 0; padding: 8px; font-size: 12px; }
+.recipe-prep-edit { margin: 12px 0; }
+.recipe-prep-edit label { display: block; font-weight: 800; font-size: 13px; margin-bottom: 6px; }
+.recipe-prep-edit textarea { width: 100%; min-height: 98px; resize: vertical; font: inherit; }
+.recipe-prep-edit small { display: block; color: var(--muted); margin: 5px 0; }
+.managed-recipe-details { margin: 12px 0; border-radius: 12px; border: 1px solid var(--border); padding: 10px 12px; }
+.managed-recipe-details summary { cursor: pointer; color: var(--accent); font-weight: 800; font-size: 13px; }
+.managed-recipe-ingredient-list { padding-left: 20px; margin: 12px 0; font-size: 13px; line-height: 1.7; }
+.managed-recipe-instructions { white-space: pre-line; margin-top: 8px; line-height: 1.65; font-size: 13px; }
+.managed-recipe-details h4 { margin: 12px 0 5px; font-size: 14px; }
+.recipe-missing-warning { border: 1px solid var(--amber); background: var(--surface); color: var(--text); border-radius: 10px; padding: 10px 12px; font-weight: 700; font-size: 12px; line-height: 1.5; margin: 10px 0; }
 .managed-recipe-tools { margin-bottom: 10px; }
 .managed-recipe-card {
   border: 1px solid var(--border);
