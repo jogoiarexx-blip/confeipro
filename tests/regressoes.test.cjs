@@ -198,7 +198,7 @@ test('V2.9: 12 receitas natalinas são instaladas uma única vez sem apagar as a
   const el={getElementById:()=>elem,addEventListener(){},querySelectorAll:()=>[]};
   const localStorage={getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)};
   const c=contexto(['js/utils.js','js/receita.js','js/receitas-natal.js'],{document:el,localStorage});
-  vm.runInContext("receitasGerenciaveis.push({id:'minha_receita',nome:'Minha receita',itens:[]}); ingredientes=[{nome:'Farinha de trigo',unidade:'g',precoTotal:6,qtdTotal:1000}];",c);
+  vm.runInContext("let receita=[];let ingredientes=[{nome:'Farinha de trigo',unidade:'g',precoTotal:6,qtdTotal:1000}];receitasGerenciaveis.push({id:'minha_receita',nome:'Minha receita',itens:[]});",c);
   c.inicializarReceitasNatal();
   let todas=JSON.parse(memoria.get('cpReceitasGerenciaveis'));
   assert.equal(todas.filter(r=>r.pasta==='natal').length,12);
