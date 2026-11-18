@@ -145,3 +145,49 @@ test('V2.7: alterna o tema com um toque e mantém a escolha salva', () => {
   assert.equal(memoria.get('cpTema'),'dark');
   assert.equal(quick.textContent,'☀ Modo claro');
 });
+
+
+test('V2.8: notificações somem sozinhas e podem ser fechadas manualmente', () => {
+  const timers = [];
+  const cancelados = new Set();
+  let idAtual = 0;
+  const classes = new Set();
+  const el = {
+    innerHTML:'',className:'toast',
+    classList:{remove(nome) { classes.delete(nome); el.className=el.className.replace(new RegExp('\\\\b'+nome+'\\\\b','g'),'').trim(); }}
+  };
+  const c = contexto(['js/utils.js'], {
+    document:{getElementById:k=>k==='toast'?el:null},
+    setTimeout:(fn,delay)=>{const id=++idAtual;timers.push({id,fn,delay});return id;},
+    clearTimeout:id=>cancelados.add(id)
+  });
+  c.toast('🌙 Tema escuro ativado');
+  assert.match(el.className,/\\bshow\\b/);
+  assert.match(el.innerHTML,/Fechar notificação/);
+  assert.equal(timers[0].delay,2600);
+  timers[0].fn();
+  assert.doesNotMatch(el.className,/\\bshow\\b/);
+  c.toast('☀ Tema claro ativado');
+  c.fecharToast();
+  assert.doesNotMatch(el.className,/\\bshow\\b/);
+  assert.ok(cancelados.has(timers[1].id));
+});
+
+test('V2.8: novo aviso substitui anterior e mantém Desfazer funcionando', () => {
+  const timers=[];const cancelados=new Set();let id=0;
+  const el={innerHTML:'',className:'toast',classList:{remove:n=>{el.className=el.className.replace(' '+n,'');}}};
+  const c=contexto(['js/utils.js'],{
+    document:{getElementById:()=>el},
+    setTimeout:(fn,delay)=>{timers.push({id:++id,fn,delay});return id;},
+    clearTimeout:x=>cancelados.add(x)
+  });
+  let desfez=false;
+  c.toast('Excluir',null,()=>{desfez=true;});
+  assert.equal(timers[0].delay,5000);
+  c.toast('Nova mensagem');
+  assert.ok(cancelados.has(timers[0].id));
+  c.toast('Excluir novamente',null,()=>{desfez=true;});
+  c._toastAcionarDesfazer();
+  assert.equal(desfez,true);
+  assert.doesNotMatch(el.className,/\\bshow\\b/);
+});

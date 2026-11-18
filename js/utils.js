@@ -69,30 +69,37 @@ function buscarIngrediente(nomeAlvo) {
 // mostrar um botão "Desfazer" no toast (usado nas exclusões, no lugar
 // do confirm() do navegador). O toast fica mais tempo na tela nesse caso,
 // pra dar tempo de clicar.
-let _toastTimer;
+let _toastTimer = null;
 let _toastDesfazerFn = null;
+
+function fecharToast() {
+  clearTimeout(_toastTimer);
+  _toastTimer = null;
+  _toastDesfazerFn = null;
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.classList.remove('show');
+}
 
 function toast(msg, tipo, desfazer) {
   const el = document.getElementById('toast');
+  if (!el) return;
+  // Uma nova mensagem substitui a anterior sem deixar temporizadores antigos ativos.
+  clearTimeout(_toastTimer);
   _toastDesfazerFn = typeof desfazer === 'function' ? desfazer : null;
 
-  el.innerHTML = `<span>${escapeHtml(msg)}</span>` +
-    (_toastDesfazerFn ? `<button type="button" class="toast-undo" onclick="_toastAcionarDesfazer()">Desfazer</button>` : '');
+  el.innerHTML = `<span class="toast-message">${escapeHtml(msg)}</span>` +
+    (_toastDesfazerFn ? '<button type="button" class="toast-undo" onclick="_toastAcionarDesfazer()">Desfazer</button>' : '') +
+    '<button type="button" class="toast-close" onclick="fecharToast()" aria-label="Fechar notificação" title="Fechar notificação">✕</button>';
   el.className = 'toast show' +
     (tipo === 'err' ? ' err' : tipo === 'warn' ? ' warn' : '') +
     (_toastDesfazerFn ? ' has-undo' : '');
 
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => {
-    el.classList.remove('show');
-    _toastDesfazerFn = null;
-  }, _toastDesfazerFn ? 5000 : 2400);
+  _toastTimer = setTimeout(fecharToast, _toastDesfazerFn ? 5000 : 2600);
 }
 
 function _toastAcionarDesfazer() {
   const fn = _toastDesfazerFn;
-  _toastDesfazerFn = null;
-  clearTimeout(_toastTimer);
-  document.getElementById('toast').classList.remove('show');
+  fecharToast();
   if (fn) fn();
 }
