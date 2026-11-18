@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <!-- Se trocar --bg em css/tema.css, atualize a cor abaixo também -->
-<meta name="theme-color" content="#FFF8F0">
+<meta name="theme-color" content="#1E1710">
 <title>Confeipro</title>
 
 <!-- PWA: manifest + ícones -->
@@ -23,13 +23,14 @@
 <link rel="stylesheet" href="css/tema.css">
 <link rel="stylesheet" href="css/estilo.css">
 <script>
-// Aplica o tema salvo ANTES da página pintar, pra não piscar claro->escuro.
+// Abre escuro por padrão; respeita a preferência salva sem piscar ao carregar.
 (function () {
   try {
     var t = localStorage.getItem('cpTema');
-    if (!t) { t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; }
-    document.documentElement.setAttribute('data-theme', t);
-  } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
 })();
 </script>
 </head>
@@ -62,9 +63,9 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="theme-toggle" id="themeToggle">
-        <button class="theme-btn" data-theme-choice="light" onclick="setTema('light')">☀ Claro</button>
-        <button class="theme-btn" data-theme-choice="dark" onclick="setTema('dark')">🌙 Escuro</button>
+      <div class="theme-toggle" id="themeToggle" aria-label="Aparência do aplicativo">
+        <button type="button" class="theme-btn" data-theme-choice="light" onclick="setTema('light')">☀ Modo claro</button>
+        <button type="button" class="theme-btn" data-theme-choice="dark" onclick="setTema('dark')">🌙 Modo escuro</button>
       </div>
       <span class="logo-badge" id="appBadge"></span>
     </div>
@@ -81,6 +82,7 @@
       <button class="hamburger" onclick="abrirSidebar()" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">☰</button>
       <div class="mobile-logo" id="mobileLogo"></div>
       <span class="network-status online" id="networkStatus">● Online</span>
+      <button type="button" class="mobile-theme-quick" id="mobileThemeQuick" onclick="alternarTema()" aria-label="Ativar modo claro" title="Ativar modo claro">☀ Modo claro</button>
     </header>
 
 <div class="page active" id="tab0">

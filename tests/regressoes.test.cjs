@@ -121,3 +121,27 @@ test('V2.6: pasta Natal preserva receitas antigas e permite mover receitas salva
   assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis'))[0].pasta,'geral');
   assert.equal(elementos.qtdReceitasNatal.textContent,0);
 });
+
+
+test('V2.7: alterna o tema com um toque e mantém a escolha salva', () => {
+  const memoria = new Map();
+  const quick = {textContent:'',title:'',setAttribute(k,v){this[k]=v;}};
+  const botoes = ['light','dark'].map(choice => ({dataset:{themeChoice:choice},classList:{toggle(k,v){this[k]=v;}},setAttribute(k,v){this[k]=v;}}));
+  const meta = {setAttribute(k,v){this[k]=v;}};
+  const html = {atributos:{'data-theme':'dark'},getAttribute(k){return this.atributos[k];},setAttribute(k,v){this.atributos[k]=v;}};
+  const c = contexto(['js/tema.js'], {
+    document:{documentElement:html,addEventListener(){},getElementById:k=>k==='mobileThemeQuick'?quick:null,
+      querySelectorAll:()=>botoes,querySelector:()=>meta},
+    localStorage:{getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)}
+  });
+  c.aplicarTema('dark');
+  assert.equal(quick.textContent,'☀ Modo claro');
+  c.alternarTema();
+  assert.equal(memoria.get('cpTema'),'light');
+  assert.equal(html.getAttribute('data-theme'),'light');
+  assert.equal(quick.textContent,'🌙 Modo escuro');
+  assert.equal(meta.content,'#FFF8F0');
+  c.alternarTema();
+  assert.equal(memoria.get('cpTema'),'dark');
+  assert.equal(quick.textContent,'☀ Modo claro');
+});
