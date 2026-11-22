@@ -302,3 +302,65 @@ function inicializarPudimGrandeNatal() {
 }
 
 document.addEventListener('DOMContentLoaded', inicializarPudimGrandeNatal);
+
+
+// Versão MENOR enviada em 22/11/2026.
+// Ingredientes confirmados na imagem: 1 caixa de leite condensado (395 g),
+// 395 ml de leite, 3 ovos e caramelo. A imagem NÃO define açúcar/água da calda;
+// as quantidades abaixo são sugestões explícitas, editáveis pelo usuário.
+const PUDIM_PEQUENO_NATAL_2026 = {
+  chave:'pudim-pequeno-395g-395ml',
+  nome:'🍮 Pudim de leite condensado pequeno (1 caixa)',
+  porcoes:8,
+  unidadeRendimento:'1 pudim pequeno (rendimento varia conforme a forma)',
+  tempoMinutos:100,
+  itens:[
+    ['Leite condensado',395,'g'],['Leite integral',395,'ml'],
+    ['Ovos',3,'unidade'],
+    ['Açúcar',100,'g'],['Água',50,'ml']
+  ],
+  preparo:[
+    'Medidas confirmadas na imagem: 1 caixa de leite condensado (395 g), 395 ml de leite e 3 ovos, mais caramelo. A calda de 100 g de açúcar e 50 ml de água é apenas uma sugestão: ajuste as quantidades conforme sua forma e seu custo.',
+    'Para a calda, caramelize os 100 g de açúcar em fogo baixo até dourar. Acrescente com cuidado os 50 ml de água quente e mexa até dissolver os torrões. Distribua em uma forma com furo central adequada a esse volume.',
+    'Misture os 395 g de leite condensado, 395 ml de leite integral e os 3 ovos delicadamente. Passe por peneira se quiser um pudim de textura mais lisa.',
+    'Despeje na forma caramelizada, cubra com papel-alumínio e leve ao forno preaquecido a 160–180 °C em banho-maria.',
+    'Asse por aproximadamente 50–80 minutos, até firmar nas bordas e tremer levemente no centro. O tempo depende da altura e material da forma.',
+    'Deixe esfriar e leve à geladeira por pelo menos 6 horas antes de desenformar. Tempo de preparo cadastrado é estimado e não inclui a refrigeração.'
+  ]
+};
+
+function inicializarPudimPequenoNatal() {
+  const chaveInstalacao = 'cpReceitaPudimPequenoNatal2026Inicializada';
+  if (localStorage.getItem(chaveInstalacao) === '1') return;
+
+  const modelo = PUDIM_PEQUENO_NATAL_2026;
+  const id = 'rec_natal_' + modelo.chave;
+  let adicionada = false;
+  if (!receitasGerenciaveis.some(r => r.id === id)) {
+    const data = new Date().toISOString();
+    const itens = modelo.itens.map(([nome, qtd, unidade]) => {
+      const ing = ingredientes.find(x => norm(x.nome) === norm(nome));
+      return {
+        nome: ing ? ing.nome : nome, qtd,
+        unidade: ing ? ing.unidade : unidade,
+        custo: ing ? arred(custoPorUnidade(ing) * qtd) : 0
+      };
+    });
+    receitasGerenciaveis.push({
+      id, nome:modelo.nome, pasta:'natal', itens, porcoes:modelo.porcoes,
+      unidadeRendimento:modelo.unidadeRendimento, tempoMinutos:modelo.tempoMinutos,
+      modoPreparo:modelo.preparo.map((passo, indice) => (indice+1) + '. ' + passo).join('\n\n'),
+      config:{}, padrao:true, criadoEm:data, atualizadoEm:data
+    });
+    adicionada = true;
+  }
+
+  // Evita duplicar o cadastro ou recriar uma receita que o usuário excluiu.
+  localStorage.setItem(chaveInstalacao, '1');
+  if (adicionada) {
+    salvarReceitasGerenciaveis();
+    renderReceitasGerenciaveis();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', inicializarPudimPequenoNatal);
