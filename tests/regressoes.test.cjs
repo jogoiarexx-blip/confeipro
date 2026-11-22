@@ -322,3 +322,64 @@ test('Pudim pequeno: exclusão permanece após reiniciar', () => {
   c.inicializarPudimPequenoNatal();
   assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,0);
 });
+
+
+test('Sobremesas da imagem: 8 modelos com totais de camadas e recheios-base corretos', () => {
+  const memoria = new Map([
+    ['cpReceitasNatal2026Inicializadas','1'],
+    ['cpReceitaPudimGrandeNatal2026Inicializada','1'],
+    ['cpReceitaPudimPequenoNatal2026Inicializada','1'],
+    ['cpReceitasGerenciaveis',JSON.stringify([
+      {id:'rec_natal_pudim',nome:'Pudim anterior',pasta:'natal',itens:[]},
+      {id:'rec_natal_pudim-grande-1100ml',nome:'Pudim grande',pasta:'natal',itens:[]},
+      {id:'rec_natal_pudim-pequeno-395g-395ml',nome:'Pudim pequeno',pasta:'natal',itens:[]},
+      {id:'minha-receita',nome:'Receita pessoal',pasta:'geral',itens:[]}
+    ])]
+  ]);
+  const el={getElementById:()=>({innerHTML:'',style:{}}),addEventListener(){},querySelectorAll:()=>[]};
+  const localStorage={getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)};
+  const c=contexto(['js/utils.js','js/receita.js','js/receitas-sobremesas-natal.js'],{document:el,localStorage});
+  vm.runInContext("let receita=[];let ingredientes=[{nome:'Leite condensado',unidade:'g',precoTotal:8,qtdTotal:395}];",c);
+  c.inicializarSobremesasNatalNov2026();
+  const todas=JSON.parse(memoria.get('cpReceitasGerenciaveis'));
+  assert.equal(todas.length,12);
+  assert.equal(todas.filter(r=>r.pasta==='natal').length,11);
+  assert.equal(todas.find(r=>r.id==='minha-receita').nome,'Receita pessoal');
+  const esperado={
+    'bombom-morango-travessa-1650g':[700,450,400,100],
+    'bombom-uva-travessa-1700g':[700,500,400,100],
+    'chocobrownie-travessa-1800g':[450,550,500,200,100],
+    'banoffee-travessa-1755g':[250,100,450,450,500,5],
+    'creme-branco-2-cremes-80a100g-leite-po':[790,400,80],
+    'creme-branco-3-cremes-100g-leite-po':[790,600,100],
+    'brigadeiro-50-cacau-base-1300g':[1185,600,120],
+    'brigadeiro-mole-chocobrownie-base':[395,200,50]
+  };
+  for(const [id,quantidades] of Object.entries(esperado)) {
+    const modelo=todas.find(r=>r.id==='rec_natal_'+id);
+    assert.ok(modelo,id);
+    assert.deepEqual(modelo.itens.map(i=>i.qtd),quantidades,id);
+    assert.equal(modelo.pasta,'natal');
+    assert.ok(modelo.modoPreparo);
+  }
+  assert.equal(todas.find(r=>r.id==='rec_natal_bombom-uva-travessa-1700g').itens[0].custo,0);
+  assert.ok(todas.find(r=>r.id==='rec_natal_creme-branco-3-cremes-100g-leite-po').itens[0].custo>0);
+  assert.match(todas.find(r=>r.id==='rec_natal_creme-branco-2-cremes-80a100g-leite-po').modoPreparo,/80 a 100 g/);
+  assert.match(todas.find(r=>r.id==='rec_natal_brigadeiro-50-cacau-base-1300g').modoPreparo,/1.905 g/);
+  c.inicializarSobremesasNatalNov2026();
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,12);
+  assert.equal(memoria.get('cpSobremesasNatalNov2026InicializadasV1'),'1');
+});
+
+test('Sobremesas da imagem: não recriar receita removida após instalação', () => {
+  const memoria=new Map();
+  const el={getElementById:()=>({innerHTML:'',style:{}}),addEventListener(){},querySelectorAll:()=>[]};
+  const localStorage={getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)};
+  const c=contexto(['js/utils.js','js/receita.js','js/receitas-sobremesas-natal.js'],{document:el,localStorage});
+  vm.runInContext("let receita=[];let ingredientes=[];",c);
+  c.inicializarSobremesasNatalNov2026();
+  vm.runInContext("receitasGerenciaveis.splice(0,1);",c);
+  c.salvarReceitasGerenciaveis();
+  c.inicializarSobremesasNatalNov2026();
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,7);
+});
