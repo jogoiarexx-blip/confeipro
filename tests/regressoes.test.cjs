@@ -273,3 +273,52 @@ test('Pudim grande: não é restaurado depois de exclusão voluntária', () => {
   c.inicializarPudimGrandeNatal();
   assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,0);
 });
+
+
+test('Pudim pequeno: usa 395g + 395ml + 3 ovos e mantém grande e anterior', () => {
+  const grandes=[
+    {id:'rec_natal_pudim',nome:'Pudim anterior',itens:[{nome:'Leite condensado',qtd:390}]},
+    {id:'rec_natal_pudim-grande-1100ml',nome:'Pudim grande',itens:[{nome:'Leite condensado',qtd:790}]},
+    {id:'usuario',nome:'Minha receita',pasta:'geral',itens:[]}
+  ];
+  const memoria=new Map([
+    ['cpReceitasNatal2026Inicializadas','1'],
+    ['cpReceitaPudimGrandeNatal2026Inicializada','1'],
+    ['cpReceitasGerenciaveis',JSON.stringify(grandes)]
+  ]);
+  const el={getElementById:()=>({innerHTML:'',style:{}}),addEventListener(){},querySelectorAll:()=>[]};
+  const localStorage={getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)};
+  const c=contexto(['js/utils.js','js/receita.js','js/receitas-natal.js'],{document:el,localStorage});
+  vm.runInContext("let receita=[];let ingredientes=[{nome:'Leite condensado',unidade:'g',precoTotal:8,qtdTotal:395}];",c);
+  c.inicializarPudimPequenoNatal();
+  const atual=JSON.parse(memoria.get('cpReceitasGerenciaveis'));
+  assert.equal(atual.length,4);
+  assert.equal(atual.find(r=>r.id==='rec_natal_pudim').itens[0].qtd,390);
+  assert.equal(atual.find(r=>r.id==='rec_natal_pudim-grande-1100ml').itens[0].qtd,790);
+  const pequeno=atual.find(r=>r.id==='rec_natal_pudim-pequeno-395g-395ml');
+  assert.ok(pequeno);
+  assert.equal(pequeno.pasta,'natal');
+  assert.deepEqual(pequeno.itens.map(i=>i.qtd),[395,395,3,100,50]);
+  assert.deepEqual(pequeno.itens.map(i=>i.unidade),['g','ml','unidade','g','ml']);
+  assert.match(pequeno.modoPreparo,/apenas uma sugestão/);
+  assert.equal(pequeno.itens[1].custo,0); // não inventar preço sem cadastro
+  c.inicializarPudimPequenoNatal();
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,4);
+  assert.equal(memoria.get('cpReceitaPudimPequenoNatal2026Inicializada'),'1');
+});
+
+test('Pudim pequeno: exclusão permanece após reiniciar', () => {
+  const memoria=new Map([
+    ['cpReceitasNatal2026Inicializadas','1'],
+    ['cpReceitaPudimGrandeNatal2026Inicializada','1']
+  ]);
+  const el={getElementById:()=>({innerHTML:'',style:{}}),addEventListener(){},querySelectorAll:()=>[]};
+  const localStorage={getItem:k=>memoria.get(k)||null,setItem:(k,v)=>memoria.set(k,v)};
+  const c=contexto(['js/utils.js','js/receita.js','js/receitas-natal.js'],{document:el,localStorage});
+  vm.runInContext("let receita=[];let ingredientes=[];",c);
+  c.inicializarPudimPequenoNatal();
+  vm.runInContext("receitasGerenciaveis.length=0;",c);
+  c.salvarReceitasGerenciaveis();
+  c.inicializarPudimPequenoNatal();
+  assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,0);
+});
