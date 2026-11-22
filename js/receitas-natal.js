@@ -240,3 +240,65 @@ function inicializarReceitasNatal() {
 }
 
 document.addEventListener('DOMContentLoaded', inicializarReceitasNatal);
+
+
+// Receita enviada pelo usuário em novembro/2026.
+// Tem ID e marca de instalação próprios: usuários que já instalaram a coleção
+// natalina anterior recebem esta novidade sem resetar nem duplicar as 12 receitas.
+// Esta versão não modifica o pudim natalino menor já existente.
+const PUDIM_GRANDE_NATAL_2026 = {
+  chave:'pudim-grande-1100ml',
+  nome:'🍮 Pudim de leite condensado grande (aprox. 1,1 L)',
+  porcoes:12,
+  unidadeRendimento:'aproximadamente 1,1 L (volume final pode variar)',
+  tempoMinutos:120,
+  itens:[
+    ['Leite condensado',790,'g'],['Leite integral',600,'ml'],
+    ['Ovos',5,'unidade'],['Açúcar',150,'g'],['Água',80,'ml']
+  ],
+  preparo:[
+    'Modo de preparo sugerido (a imagem enviada informa apenas os ingredientes e o rendimento estimado).',
+    'Para a calda, derreta os 150 g de açúcar em fogo baixo até obter caramelo dourado. Acrescente cuidadosamente os 80 ml de água quente, aos poucos, e mexa até dissolver os torrões. Espalhe na forma com furo central.',
+    'Misture os 790 g de leite condensado, os 600 ml de leite integral e os 5 ovos até homogeneizar, evitando bater demais para manter a textura cremosa. Se desejar, passe por uma peneira.',
+    'Despeje na forma caramelizada, deixando espaço para a expansão, e cubra com papel-alumínio. Use forma alta com capacidade suficiente para a mistura.',
+    'Asse em banho-maria no forno preaquecido a 160–180 °C por aproximadamente 70–100 minutos. O tempo varia com o forno e a forma: as bordas devem estar firmes, com leve tremor no centro.',
+    'Deixe esfriar e leve à geladeira por pelo menos 6 horas antes de desenformar. O rendimento aproximado de 1,1 L pode variar conforme a forma e a cocção. O tempo cadastrado não inclui o resfriamento.'
+  ]
+};
+
+function inicializarPudimGrandeNatal() {
+  const chaveInstalacao = 'cpReceitaPudimGrandeNatal2026Inicializada';
+  if (localStorage.getItem(chaveInstalacao) === '1') return;
+
+  const modelo = PUDIM_GRANDE_NATAL_2026;
+  const id = 'rec_natal_' + modelo.chave;
+  let adicionada = false;
+  if (!receitasGerenciaveis.some(r => r.id === id)) {
+    const data = new Date().toISOString();
+    const itens = modelo.itens.map(([nome, qtd, unidade]) => {
+      // Usar preços somente de ingredientes realmente cadastrados.
+      const ing = ingredientes.find(x => norm(x.nome) === norm(nome));
+      return {
+        nome: ing ? ing.nome : nome, qtd,
+        unidade: ing ? ing.unidade : unidade,
+        custo: ing ? arred(custoPorUnidade(ing) * qtd) : 0
+      };
+    });
+    receitasGerenciaveis.push({
+      id, nome:modelo.nome, pasta:'natal', itens, porcoes:modelo.porcoes,
+      unidadeRendimento:modelo.unidadeRendimento, tempoMinutos:modelo.tempoMinutos,
+      modoPreparo:modelo.preparo.map((passo, indice) => (indice+1) + '. ' + passo).join('\n\n'),
+      config:{}, padrao:true, criadoEm:data, atualizadoEm:data
+    });
+    adicionada = true;
+  }
+
+  // Impede ressuscitar a receita após exclusão ou alteração voluntária.
+  localStorage.setItem(chaveInstalacao, '1');
+  if (adicionada) {
+    salvarReceitasGerenciaveis();
+    renderReceitasGerenciaveis();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', inicializarPudimGrandeNatal);
