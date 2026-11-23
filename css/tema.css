@@ -12,6 +12,9 @@
    navegador no celular).
    ═══════════════════════════════════════════════════════════ */
 :root {
+  --card:       var(--surface); /* compatibilidade com componentes recentes */
+  --on-accent:  #FFFFFF;
+  --on-status:  #FFFFFF;
   --bg:         #FFF8F0;  /* fundo geral da página */
   --surface:    #FFFFFF;  /* fundo dos cards e do header */
   --surface2:   #FCF1E3;  /* fundo de inputs e caixas de resultado */
@@ -45,21 +48,28 @@
    o restante do app (botões, cards, gráficos) já usa as mesmas
    variáveis, então nada mais precisa mudar.
    ═══════════════════════════════════════════════════════════ */
+/* TRÍADE ACESSÍVEL: coral (ações), menta (positivo), dourado (atenção).
+   Fundo azul-petróleo escuro, superfícies escuras e letras bem claras.
+   Relações de contraste das cores de texto no card: 7:1 ou mais. */
 :root[data-theme="dark"] {
-  --bg:         #1B1510;  /* fundo geral da página */
-  --surface:    #26201A;  /* fundo dos cards, sidebar e header */
-  --surface2:   #2F2820;  /* fundo de inputs e caixas de resultado */
-  --border:     #40372C;  /* linhas e bordas sutis */
+  color-scheme: dark;
+  --bg:          #121B26;
+  --surface:     #1D2A38;
+  --surface2:    #27384A;
+  --border:      #486076;
+  --card:        var(--surface);
 
-  --accent:     #EA7C97;  /* cor principal da marca (botões, destaques) */
-  --accent-soft:#3A2A30;  /* versão clara do accent (aba ativa, foco) */
-  --accent2:    #DDA34F;  /* cor secundária (detalhes, botões alternativos) */
+  --accent:      #FF9C91; /* coral — ação principal */
+  --accent-soft: #422F3A;
+  --accent2:     #FFD18C; /* dourado — destaques */
 
-  --green:      #92B584;  /* sucesso, lucro, valores positivos */
-  --green-soft: #263323;
-  --amber:      #E4A54A;  /* alertas leves, custos extras */
-  --red:        #E37D68;  /* erros, exclusão, valores negativos */
+  --green:       #82DFC9; /* menta — valores positivos */
+  --green-soft:  #1C3C3C;
+  --amber:       #FFD18C;
+  --red:         #FF8E88;
 
-  --text:       #F1E6D8;  /* texto principal */
-  --muted:      #AB9781;  /* texto secundário/legendas */
+  --text:        #F5F7FA;
+  --muted:       #C2D0DE;
+  --on-accent:   #18212B;
+  --on-status:   #15202A;
 }
