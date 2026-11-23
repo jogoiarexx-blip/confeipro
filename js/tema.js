@@ -5,7 +5,7 @@
 // do index.html (pra não piscar claro->escuro ao carregar a página).
 // Aqui só sincronizamos os botões e a cor da barra do navegador.
 
-const CORES_THEME_COLOR = { light: '#FFF8F0', dark: '#1E1710' };
+const CORES_THEME_COLOR = { light: '#FFF8F0', dark: '#121B26' };
 
 function aplicarTema(tema) {
   document.documentElement.setAttribute('data-theme', tema);
