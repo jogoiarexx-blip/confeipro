@@ -337,7 +337,7 @@ select option { background: var(--surface2); }
   letter-spacing: 0.1px;
 }
 
-.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(224,87,122,0.28); }
+.btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 4px 12px rgba(224,87,122,0.28); }
 .btn-primary:active { transform: scale(0.98); opacity: 0.92; }
 
 .btn-outline {
@@ -1430,7 +1430,7 @@ input[type="date"] { width: 100%; }
 
 
 /* ConfeiPro v2.3: ações orientadas e ajuda contextual */
-.cp23-welcome{background:var(--card,#fff);border:1px solid var(--border,#e9ddd5);border-radius:18px;padding:20px;margin-bottom:18px}
+.cp23-welcome{background:var(--surface);color:var(--text);border:1px solid var(--border,#e9ddd5);border-radius:18px;padding:20px;margin-bottom:18px}
 .cp23-welcome h2{margin:0 0 6px;font-size:1.35rem}
 .cp23-welcome p{margin:4px 0 12px}
 .cp23-quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
@@ -1460,7 +1460,7 @@ input[type="date"] { width: 100%; }
 
 
 /* ConfeiPro V2.5 — financeiro enxuto e legível no celular */
-.cp25-finance{padding:18px;margin:14px 0 20px;border:1px solid var(--border,#e6d9cf);border-radius:14px;background:var(--card,#fff)}
+.cp25-finance{padding:18px;margin:14px 0 20px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text)}
 .cp25-finance h3{margin:0 0 8px;font-size:1.08rem}
 .cp25-finance>p{font-size:.87rem;opacity:.8;margin:0 0 12px}
 .cp25-finance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -1469,3 +1469,100 @@ input[type="date"] { width: 100%; }
 .cp25-finance-grid strong{font-size:clamp(1rem,2.8vw,1.5rem);overflow-wrap:anywhere}
 .cp25-finance .cp25-finance-note{margin:12px 0 0;font-size:.78rem}
 @media(max-width:540px){.cp25-finance-grid{grid-template-columns:1fr}}
+
+
+/* Confeipro v2.10: revisão visual de contraste (principalmente tela Início).
+   Os cartões antigos usavam --card com fallback #fff no modo escuro,
+   fazendo texto quase branco desaparecer sobre um fundo branco. */
+.cp23-welcome, .cp25-finance {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.cp23-welcome { border-top: 3px solid var(--accent); }
+.cp25-finance { border-top: 3px solid var(--green); }
+.cp23-welcome h2, .cp25-finance h3,
+.cp23-welcome p, .cp23-alerts, .cp25-finance p,
+.cp25-finance-grid strong { color: var(--text); opacity: 1; }
+.cp25-finance > p, .cp25-finance .cp25-finance-note,
+.cp25-finance-grid span, .cp23-hint { color: var(--muted); opacity: 1; }
+.cp25-finance-grid > div {
+  background: var(--surface2);
+  border-color: var(--border);
+  border-left: 3px solid var(--accent2);
+}
+.cp25-finance-grid strong { font-weight: 800; }
+.cp23-quick-actions button {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+  border-left: 3px solid var(--accent);
+  min-height: 54px;
+}
+.cp23-quick-actions button:hover, .cp23-quick-actions button:focus-visible {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Botões preenchidos no tema escuro precisam de tinta escura, não branca,
+   porque coral e menta são cores claras e não dão contraste com branco. */
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .mobile-fab,
+:root[data-theme="dark"] .logo-badge {
+  color: var(--on-accent);
+}
+:root[data-theme="dark"] .toast,
+:root[data-theme="dark"] .toast.err,
+:root[data-theme="dark"] .toast.warn {
+  color: var(--on-status);
+}
+:root[data-theme="dark"] .toast-undo,
+:root[data-theme="dark"] .toast-close {
+  color: var(--on-status);
+  background: rgba(18,27,38,.12);
+}
+:root[data-theme="dark"] .toast-undo:focus-visible,
+:root[data-theme="dark"] .toast-close:focus-visible {
+  outline-color: var(--on-status);
+}
+
+/* Campos, opções e textos de apoio do celular: alto contraste e estados nítidos. */
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+:root[data-theme="dark"] input[readonly],
+:root[data-theme="dark"] input:disabled,
+:root[data-theme="dark"] select:disabled,
+:root[data-theme="dark"] textarea:disabled {
+  opacity: .85;
+  color: var(--muted);
+}
+:root[data-theme="dark"] select option { background: var(--surface2); color: var(--text); }
+:root[data-theme="dark"] .managed-recipe-card,
+:root[data-theme="dark"] .pedido-card,
+:root[data-theme="dark"] .result-box {
+  color: var(--text);
+}
+:root[data-theme="dark"] .hint { opacity: 1; }
+:root[data-theme="dark"] .recipe-folder-natal { border-color: var(--green); }
+:root[data-theme="dark"] .mobile-bottom-nav {
+  background: var(--surface);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .mobile-nav-item small { font-size: 11px; }
+:root[data-theme="dark"] .cp23-alerts p,
+:root[data-theme="dark"] .cp25-finance-grid span,
+:root[data-theme="dark"] .dash-label,
+:root[data-theme="dark"] .managed-recipe-meta,
+:root[data-theme="dark"] .pedido-grid {
+  font-size: max(12px, 0.8rem);
+}
