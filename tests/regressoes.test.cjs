@@ -383,3 +383,46 @@ test('Sobremesas da imagem: não recriar receita removida após instalação', (
   c.inicializarSobremesasNatalNov2026();
   assert.equal(JSON.parse(memoria.get('cpReceitasGerenciaveis')).length,7);
 });
+
+
+test('V2.10: tela inicial legível no modo escuro, sem cartões brancos', () => {
+  const tema=fs.readFileSync('css/tema.css','utf8');
+  const estilo=fs.readFileSync('css/estilo.css','utf8');
+  const html=fs.readFileSync('index.html','utf8');
+  const script=fs.readFileSync('js/tema.js','utf8');
+  const dark=tema.split(':root[data-theme="dark"] {')[1];
+  assert.ok(dark,'Paleta escura definida');
+  assert.match(dark,/--card:\s*var\(--surface\)/);
+  assert.match(dark,/--bg:\s*#121B26/i);
+  assert.match(estilo,/\.cp23-welcome\{background:var\(--surface\)/);
+  assert.match(estilo,/\.cp25-finance\{[^}]*background:var\(--surface\)/);
+  assert.doesNotMatch(estilo,/--card,\s*#fff/i);
+  assert.match(html,/<meta name="theme-color" content="#121B26">/);
+  assert.match(script,/dark: '#121B26'/);
+
+  const read = name => {
+    const match=dark.match(new RegExp('--'+name+'\\s*:\\s*(#[0-9A-Fa-f]{6})'));
+    assert.ok(match,'Variável da paleta não encontrada: '+name);
+    return match[1];
+  };
+  function luminancia(cor) {
+    const v=cor.slice(1).match(/../g).map(h=>parseInt(h,16)/255)
+      .map(n=>n<=0.04045?n/12.92:Math.pow((n+0.055)/1.055,2.4));
+    return v[0]*0.2126+v[1]*0.7152+v[2]*0.0722;
+  }
+  function contraste(a,b) {
+    const x=luminancia(read(a)),y=luminancia(read(b));
+    return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);
+  }
+  for(const [texto,fundo] of [
+    ['text','bg'],['text','surface'],['text','surface2'],
+    ['muted','surface'],['muted','surface2'],
+    ['accent','surface'],['accent2','surface'],['green','surface'],
+    ['on-accent','accent'],['on-status','green']
+  ]) {
+    assert.ok(contraste(texto,fundo)>=4.5,
+      'Contraste insuficiente em '+texto+' / '+fundo);
+  }
+  assert.match(estilo,/:root\[data-theme="dark"\] \.btn-primary/);
+  assert.match(estilo,/:root\[data-theme="dark"\] input::placeholder/);
+});
